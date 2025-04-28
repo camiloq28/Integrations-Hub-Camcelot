@@ -21,5 +21,10 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} at http://0.0.0.0:${PORT}`);
+});
+
+// Add a test route to verify server is responding
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is running' });
 });
