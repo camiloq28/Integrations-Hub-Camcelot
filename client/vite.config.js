@@ -11,6 +11,7 @@ export default defineConfig({
     strictPort: true,
     hmr: {
       clientPort: 443
-    }
+    },
+    allowedHosts: 'all'
   }
 })
