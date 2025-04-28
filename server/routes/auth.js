@@ -1,16 +1,12 @@
-
 const express = require('express');
+const { register, login } = require('../controllers/authController');
+
 const router = express.Router();
 
-router.post('/register', (req, res) => {
-  try {
-    console.log('Register request received:', req.body);
-    const { email, password } = req.body;
-    // TODO: Add validation and user creation logic
-    res.status(201).json({ message: 'User registered successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+// POST /api/auth/register
+router.post('/register', register);
+
+// POST /api/auth/login
+router.post('/login', login);
 
 module.exports = router;
