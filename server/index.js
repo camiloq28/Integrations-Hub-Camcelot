@@ -3,7 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT; // Important! No fallback 5000 on Replit!
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
