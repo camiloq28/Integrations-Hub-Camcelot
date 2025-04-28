@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 // In-memory users database (temporary)
 const users = [];
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
 // Register new user
 const register = async (req, res) => {
