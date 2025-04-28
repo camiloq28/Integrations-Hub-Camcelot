@@ -12,6 +12,8 @@ export default defineConfig({
     hmr: {
       clientPort: 443
     },
-    allowedHosts: 'all'
+    allowedHosts: [
+      '4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev'
+    ]
   }
 })
