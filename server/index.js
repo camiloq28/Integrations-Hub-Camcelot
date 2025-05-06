@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -25,7 +26,7 @@ console.log('Mounting /api/client');
 app.use('/api/client', clientRoutes);
 
 console.log('Mounting /api/plan');
-app.use('/api/plan', planRoutes); 
+app.use('/api/plan', planRoutes);
 
 console.log('Mounting /api/users');
 app.use('/api', usersRoute);
