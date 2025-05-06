@@ -223,22 +223,34 @@ function OrganizationUserManagement() {
           <div style={{ marginBottom: '20px' }}>
             <label><strong>Plan:</strong></label>
             <select
-              value={orgPlan || ''}
+              value={orgPlan?._id || ''}
               onChange={(e) => updateOrgPlan(e.target.value)}
               style={{ marginLeft: '10px' }}
             >
               <option value="">Select a Plan</option>
               {availablePlans.map(plan => (
-                <option key={plan._id} value={plan._id}>{plan.name}</option>
+                <option key={plan._id} value={plan._id} selected={plan._id === orgPlan?._id}>
+                  {plan.name}
+                </option>
               ))}
             </select>
+            {orgPlan && (
+              <div style={{ marginTop: '5px', color: '#888' }}>
+                Current Plan: {orgPlan.name || 'None'}
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: '20px' }}>
-            <label><strong>Allowed Integrations:</strong></label>
+            <label><strong>Plan Integrations:</strong></label>
             <ul style={{ paddingLeft: '20px' }}>
-              {orgIntegrations.map(integration => (
-                <li key={integration}>✅ {integration}</li>
+              {orgPlan?.integrations?.map(integration => (
+                <li key={integration} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ color: '#4CAF50' }}>✓</span> {integration}
+                </li>
               ))}
+              {(!orgPlan?.integrations || orgPlan.integrations.length === 0) && (
+                <li style={{ color: '#888' }}>No integrations available in this plan</li>
+              )}
             </ul>
           </div>
         </>
