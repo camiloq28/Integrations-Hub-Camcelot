@@ -12,10 +12,10 @@ router.get('/users', protect, hasRole('admin', 'client_admin'), async (req, res)
     const currentUser = await User.findOne({ email: req.user.email });
 
     const filter = currentUser.role === 'admin'
-      ? {} // Admin sees all users
-      : { orgId: currentUser.orgId }; // Client admin sees only their org
+      ? {}
+      : { orgId: currentUser.orgId };
 
-    const users = await User.find(filter, 'firstName lastName email role orgId plan allowedIntegrations')
+    const users = await User.find(filter, 'firstName lastName email role orgId plan allowedIntegrations status')
       .populate('orgId', 'name orgId');
 
     res.json({ users });
@@ -49,7 +49,8 @@ router.post('/users', protect, hasRole('admin', 'client_admin'), async (req, res
       role,
       firstName,
       lastName,
-      orgId
+      orgId,
+      status: 'active'
     });
 
     res.status(201).json({ message: 'User created successfully.' });
@@ -59,7 +60,57 @@ router.post('/users', protect, hasRole('admin', 'client_admin'), async (req, res
   }
 });
 
-// 📝 Update user role (only for client roles)
+// 📝 General user update (name, role, status)
+router.put('/users/:email', protect, hasRole('admin', 'client_admin', 'platform_editor'), async (req, res) => {
+  const { email } = req.params;
+  const updates = req.body;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { email },
+      updates,
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({ message: 'User updated.', user });
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 🎚 Toggle Active/Disabled status only
+router.put('/users/:email/status', protect, hasRole('admin', 'client_admin', 'platform_editor'), async (req, res) => {
+  const { status } = req.body;
+  const { email } = req.params;
+
+  if (!['active', 'disabled'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status.' });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { email },
+      { status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({ message: `User status updated to ${status}.` });
+  } catch (err) {
+    console.error('Error updating user status:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// 🔄 Update role only (legacy route, optional)
 router.post('/users/:email/role', protect, hasRole('admin', 'client_admin'), async (req, res) => {
   const { role } = req.body;
   const { email } = req.params;
@@ -109,34 +160,5 @@ router.post('/users/:email/password', protect, hasRole('admin', 'client_admin'),
     res.status(500).json({ message: 'Server error.' });
   }
 });
-
-// Toggle Active/Disabled status
-router.put('/users/:email/status', protect, hasRole('admin', 'client_admin', 'platform_editor'), async (req, res) => {
-  const { status } = req.body;
-  const { email } = req.params;
-
-  if (!['active', 'disabled'].includes(status)) {
-    return res.status(400).json({ message: 'Invalid status.' });
-  }
-
-  try {
-    const user = await User.findOneAndUpdate(
-      { email },
-      { status },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-
-    res.json({ message: `User status updated to ${status}.` });
-  } catch (err) {
-    console.error('Error updating user status:', err);
-    res.status(500).json({ message: 'Server error.' });
-  }
-});
-
-
 
 module.exports = router;

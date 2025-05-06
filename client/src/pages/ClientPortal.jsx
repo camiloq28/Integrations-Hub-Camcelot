@@ -8,27 +8,33 @@ function ClientPortal() {
   const [enabledIntegrations, setEnabledIntegrations] = useState([]);
   const [allowedIntegrations, setAllowedIntegrations] = useState([]);
   const [orgName, setOrgName] = useState('');
+  const [orgId, setOrgId] = useState('');
+  const [role, setRole] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const storedRole = localStorage.getItem('role');
+    if (storedRole) setRole(storedRole);
 
     const clientRoles = ['client_admin', 'client_editor', 'client_viewer'];
 
-    if (!token || !clientRoles.includes(role)) {
+    if (!token || !clientRoles.includes(storedRole)) {
       toast.error('Unauthorized – redirecting to login.');
       navigate('/');
       return;
     }
 
-    // Fetch org name from /portal
+    // Fetch org name and orgId
     fetch('/api/client/portal', {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
       .then(data => {
+        console.log('portal data:', data); // 👈 Add this to debug
         setOrgName(data.orgName || 'Client');
+        setOrgId(data.orgId || '');
+
       })
       .catch(err => {
         console.error(err);
@@ -97,12 +103,11 @@ function ClientPortal() {
         My Profile
       </button>
 
-      {localStorage.getItem('role') === 'client_admin' && (
-        <button onClick={() => navigate('/users')} style={{ marginBottom: '10px' }}>
+      {orgId && role?.toLowerCase() === 'client_admin' && (
+        <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginBottom: '10px' }}>
           User Management
         </button>
       )}
-
 
       <button onClick={logout} style={{ marginBottom: '20px' }}>
         Logout

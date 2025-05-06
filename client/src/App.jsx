@@ -2,9 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientPortal from './pages/ClientPortal';
-import UserProfile from './pages/UserProfile'; 
+import UserProfile from './pages/UserProfile';
+import PlanManagement from './pages/PlanManagement';
 import UserManagement from './pages/UserManagement';
-
+import OrganizationUserManagement from './pages/OrganizationUserManagement';
 
 function App() {
   return (
@@ -13,8 +14,11 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/client" element={<ClientPortal />} />
-        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/profile" element={<UserProfile />}
+/>
         <Route path="/users" element={<UserManagement />} />
+        <Route path="/plans" element={<PlanManagement />} />
+        <Route path="/org/:orgId/users" element={<OrganizationUserManagement />} />
       </Routes>
     </Router>
   );

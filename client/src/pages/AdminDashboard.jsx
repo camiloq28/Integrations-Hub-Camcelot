@@ -17,6 +17,7 @@ function AdminDashboard() {
       <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
         <button onClick={() => navigate('/profile')}>My Profile</button>
         <button onClick={() => navigate('/users')}>User Management</button>
+        <button onClick={() => navigate('/plans')}>Manage Plans</button>
         <button onClick={logout}>Logout</button>
       </div>
 
