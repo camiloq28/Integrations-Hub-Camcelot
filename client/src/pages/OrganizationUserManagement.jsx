@@ -9,7 +9,7 @@ function OrganizationUserManagement() {
 
   const [users, setUsers] = useState([]);
   const [orgName, setOrgName] = useState('');
-  const [orgPlan, setOrgPlan] = useState('');
+  const [orgPlan, setOrgPlan] = useState(null);
   const [orgIntegrations, setOrgIntegrations] = useState([]);
   const [role, setRole] = useState('');
   const [orgId, setOrgId] = useState('');
@@ -52,7 +52,8 @@ function OrganizationUserManagement() {
       .then(data => {
         setUsers(data.users || []);
         setOrgName(data.orgName || '');
-        setOrgPlan(data.plan?._id || '');
+        const selectedPlan = availablePlans.find(p => p._id === data.plan || p.name === data.plan);
+        setOrgPlan(selectedPlan || null);
         setOrgIntegrations(data.allowedIntegrations || []);
       })
       .catch(err => {
@@ -227,18 +228,12 @@ function OrganizationUserManagement() {
               onChange={(e) => updateOrgPlan(e.target.value)}
               style={{ marginLeft: '10px' }}
             >
-              <option value="">Select a Plan</option>
               {availablePlans.map(plan => (
-                <option key={plan._id} value={plan._id} selected={plan._id === orgPlan?._id}>
+                <option key={plan._id} value={plan._id}>
                   {plan.name}
                 </option>
               ))}
             </select>
-            {orgPlan && (
-              <div style={{ marginTop: '5px', color: '#888' }}>
-                Current Plan: {orgPlan.name || 'None'}
-              </div>
-            )}
           </div>
           <div style={{ marginBottom: '20px' }}>
             <label><strong>Plan Integrations:</strong></label>
