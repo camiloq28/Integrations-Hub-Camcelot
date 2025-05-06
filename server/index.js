@@ -15,20 +15,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Connect routes
-console.log('Mounting /api/auth');
+// Mount routes
 app.use('/api/auth', authRoutes);
-
-console.log('Mounting /api/admin');
 app.use('/api/admin', adminRoutes);
-
-console.log('Mounting /api/client');
 app.use('/api/client', clientRoutes);
-
-console.log('Mounting /api/plan');
 app.use('/api/plan', planRoutes);
-
-console.log('Mounting /api/users');
 app.use('/api', usersRoute);
 
 app.get('/', (req, res) => {
