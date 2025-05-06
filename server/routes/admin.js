@@ -72,32 +72,28 @@ router.get('/orgs/:orgId/users', protect, hasRole('admin', 'platform_editor', 'c
   }
 });
 
-// 🔧 Update organization plan
-router.post('/orgs/:orgId/plan', protect, adminOnly, async (req, res) => {
+// Update an organization's plan
+router.post('/orgs/:orgId/plan', protect, hasRole('admin', 'platform_editor'), async (req, res) => {
+  const { plan } = req.body;
   const { orgId } = req.params;
-  const { planId } = req.body;
 
-  if (!planId) return res.status(400).json({ message: 'Missing planId.' });
+  if (!plan) {
+    return res.status(400).json({ message: 'Missing planId.' });
+  }
 
   try {
-    const plan = await Plan.findById(planId);
-    if (!plan) return res.status(404).json({ message: 'Plan not found.' });
-
     const org = await Organization.findById(orgId);
-    if (!org) return res.status(404).json({ message: 'Organization not found.' });
+    if (!org) {
+      return res.status(404).json({ message: 'Organization not found.' });
+    }
 
-    org.plan = plan._id;
-    org.allowedIntegrations = plan.integrations;
+    org.plan = plan; // assuming 'plan' is a valid Plan _id
     await org.save();
 
-    res.json({
-      message: 'Organization plan updated.',
-      plan: plan.name,
-      allowedIntegrations: plan.integrations
-    });
+    res.json({ message: 'Plan updated successfully.' });
   } catch (err) {
-    console.error('Error updating organization plan:', err);
-    res.status(500).json({ message: 'Server error during organization update.' });
+    console.error('Error updating plan:', err);
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 
@@ -127,4 +123,4 @@ router.post('/orgs/:orgId/integrations', protect, adminOnly, async (req, res) =>
   }
 });
 
-// ... All other unchanged routes continue below
+module.exports = router;

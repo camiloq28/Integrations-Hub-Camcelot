@@ -9,9 +9,8 @@ const organizationSchema = new mongoose.Schema({
     sparse: true          // Allows multiple docs without a name
   },
   plan: {
-    type: String,
-    enum: ['starter', 'pro', 'enterprise'],
-    default: 'starter'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Plan'
   },
   orgId: {
     type: String,

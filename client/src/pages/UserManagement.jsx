@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [orgs, setOrgs] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [role, setRole] = useState('');
   const [newUser, setNewUser] = useState({
     firstName: '',
@@ -32,6 +33,7 @@ function UserManagement() {
     }
     fetchUsers();
     fetchOrganizations();
+    fetchPlans();
   }, [navigate, token]);
 
   const fetchUsers = () => {
@@ -58,7 +60,24 @@ function UserManagement() {
       });
   };
 
-  const handlePlanChange = async (orgId, newPlan) => {
+  const fetchPlans = () => {
+    fetch('/api/plan/plans', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setPlans(data.plans || []))
+      .catch(err => {
+        console.error(err);
+        toast.error('Failed to fetch plans');
+      });
+  };
+
+  const handlePlanChange = async (orgId, newPlanId) => {
+    if (!newPlanId) {
+      toast.error('Missing planId');
+      return;
+    }
+
     try {
       const res = await fetch(`/api/admin/orgs/${orgId}/plan`, {
         method: 'POST',
@@ -66,7 +85,7 @@ function UserManagement() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ plan: newPlan })
+        body: JSON.stringify({ plan: newPlanId })
       });
       const data = await res.json();
       if (res.ok) {
@@ -76,7 +95,7 @@ function UserManagement() {
         toast.error(data.message || 'Failed to update plan');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error updating plan:', err);
       toast.error('Server error during update');
     }
   };
@@ -292,23 +311,29 @@ function UserManagement() {
             </tr>
           </thead>
           <tbody>
-            {orgs.map((org, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                <td>{org.name}</td>
-                <td>{org.orgId}</td>
-                <td>{org.userCount || 0}</td>
-                <td>
-                  <select value={org.plan || ''} onChange={(e) => handlePlanChange(org._id, e.target.value)}>
-                    <option value="starter">Starter</option>
-                    <option value="pro">Pro</option>
-                    <option value="enterprise">Enterprise</option>
-                  </select>
-                </td>
-                <td>
-                  <button onClick={() => navigate(`/org/${org._id}/users`)}>Manage</button>
-                </td>
-              </tr>
-            ))}
+            {orgs.map((org, i) => {
+              const selectedPlan = plans.find(p => p._id === org.plan || p.name === org.plan)?._id || '';
+              return (
+                <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                  <td>{org.name}</td>
+                  <td>{org.orgId}</td>
+                  <td>{org.userCount || 0}</td>
+                  <td>
+                    <select
+                      value={selectedPlan}
+                      onChange={(e) => handlePlanChange(org._id, e.target.value)}
+                    >
+                      {plans.map(plan => (
+                        <option key={plan._id} value={plan._id}>{plan.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <button onClick={() => navigate(`/org/${org._id}/users`)}>Manage</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

@@ -20,7 +20,7 @@ function PlanManagement() {
 
   const fetchIntegrations = async () => {
     try {
-      const res = await fetch('/api/admin/integrations', {
+      const res = await fetch('/api/plan/integrations', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -33,7 +33,7 @@ function PlanManagement() {
 
   const fetchPlans = async () => {
     try {
-      const res = await fetch('/api/admin/plans', {
+      const res = await fetch('/api/plan/plans', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -50,7 +50,7 @@ function PlanManagement() {
       return;
     }
     try {
-      const res = await fetch('/api/admin/integrations', {
+      const res = await fetch('/api/plan/integrations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ function PlanManagement() {
       integrations: selectedIntegrations
     };
 
-    const url = editingPlan ? `/api/admin/plans/${editingPlan._id}` : '/api/admin/plans';
+    const url = editingPlan ? `/api/plan/plans/${editingPlan._id}` : '/api/plan/plans';
     const method = editingPlan ? 'PUT' : 'POST';
 
     try {
@@ -124,7 +124,7 @@ function PlanManagement() {
 
   const deletePlan = async (id) => {
     try {
-      const res = await fetch(`/api/admin/plans/${id}`, {
+      const res = await fetch(`/api/plan/plans/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
