@@ -7,6 +7,7 @@ const adminRoutes = require('./routes/admin');
 const clientRoutes = require('./routes/client');
 const usersRoute = require('./routes/users');
 const planRoutes = require('./routes/planRoutes');
+const workflowRoutes = require('./routes/workflows');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/plan', planRoutes); 
+app.use('/api', workflowRoutes);
 app.use('/api', usersRoute);
 app.get('/', (req, res) => {
   res.send('API is running...');

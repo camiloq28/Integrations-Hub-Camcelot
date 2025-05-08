@@ -72,6 +72,19 @@ router.get('/orgs/:orgId/users', protect, hasRole('admin', 'platform_editor', 'c
   }
 });
 
+// Get org by custom string orgId (e.g. ORG002)
+router.get('/orgs/by-custom-id/:orgId', protect, hasRole('admin', 'platform_editor', 'client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+  try {
+    const org = await Organization.findOne({ orgId: req.params.orgId });
+    if (!org) return res.status(404).json({ message: 'Organization not found.' });
+    res.json(org);
+  } catch (err) {
+    console.error('Error resolving orgId:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
 // Update an organization's plan
 router.post('/orgs/:orgId/plan', protect, hasRole('admin', 'platform_editor'), async (req, res) => {
   const { plan } = req.body;
@@ -87,10 +100,20 @@ router.post('/orgs/:orgId/plan', protect, hasRole('admin', 'platform_editor'), a
       return res.status(404).json({ message: 'Organization not found.' });
     }
 
-    org.plan = plan; // assuming 'plan' is a valid Plan _id
+    org.plan = plan; // Save the plan _id
     await org.save();
 
-    res.json({ message: 'Plan updated successfully.' });
+    // Fetch updated plan details
+    const populatedPlan = await Plan.findById(plan);
+    if (!populatedPlan) {
+      return res.status(404).json({ message: 'Plan not found after update.' });
+    }
+
+    res.json({
+      message: 'Plan updated successfully.',
+      plan: populatedPlan,
+      allowedIntegrations: populatedPlan.integrations || []
+    });
   } catch (err) {
     console.error('Error updating plan:', err);
     res.status(500).json({ message: 'Server error.' });

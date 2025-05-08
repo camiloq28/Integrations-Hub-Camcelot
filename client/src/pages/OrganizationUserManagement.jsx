@@ -45,38 +45,31 @@ function OrganizationUserManagement() {
   useEffect(() => {
     if (!orgId || !token) return;
 
-    fetch(`/api/admin/orgs/${orgId}/users`, {
+    const fetchPlans = fetch('/api/plan/plans', {
       headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setUsers(data.users || []);
-        setOrgName(data.orgName || '');
-        const selectedPlan = availablePlans.find(p => p._id === data.plan || p.name === data.plan);
+    }).then(res => res.json());
+
+    const fetchOrgData = fetch(`/api/admin/orgs/${orgId}/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => res.json());
+
+    Promise.all([fetchPlans, fetchOrgData])
+      .then(([planData, orgData]) => {
+        setAvailablePlans(planData.plans || []);
+        setUsers(orgData.users || []);
+        setOrgName(orgData.orgName || '');
+
+        const plans = planData.plans || [];
+        const selectedPlan = plans.find(p => p._id === orgData.plan);
+
         setOrgPlan(selectedPlan || null);
-        setOrgIntegrations(data.allowedIntegrations || []);
+        setOrgIntegrations(selectedPlan?.integrations || []);
       })
       .catch(err => {
         console.error(err);
-        toast.error('Failed to fetch users.');
+        toast.error('Error loading organization data.');
       });
-
-    fetch('/api/plan/plans', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setAvailablePlans(data.plans || []))
-      .catch(err => console.error('Error fetching plans:', err));
   }, [orgId, token]);
-
-  const fetchUsers = () => {
-    fetch(`/api/admin/orgs/${orgId}/users`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setUsers(data.users || []))
-      .catch(err => toast.error('Failed to reload users.'));
-  };
 
   const updateOrgPlan = async (planId) => {
     try {
@@ -91,8 +84,9 @@ function OrganizationUserManagement() {
       const data = await res.json();
       if (res.ok) {
         toast.success('Organization plan updated');
-        setOrgPlan(data.plan?._id || '');
-        setOrgIntegrations(data.allowedIntegrations || []);
+        const newPlan = availablePlans.find(p => p._id === planId);
+        setOrgPlan(newPlan);
+        setOrgIntegrations(newPlan?.integrations || []);
       } else {
         toast.error(data.message || 'Failed to update plan');
       }
@@ -215,6 +209,20 @@ function OrganizationUserManagement() {
     }
   };
 
+  const fetchUsers = () => {
+    fetch(`/api/admin/orgs/${orgId}/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setUsers(data.users || []))
+      .catch(err => {
+        console.error(err);
+        toast.error('Failed to reload users.');
+      });
+  };
+
+
+  
   return (
     <div style={{ maxWidth: '900px', margin: 'auto' }}>
       <h2>{orgName || 'Organization'} Users</h2>
@@ -228,22 +236,22 @@ function OrganizationUserManagement() {
               onChange={(e) => updateOrgPlan(e.target.value)}
               style={{ marginLeft: '10px' }}
             >
+              <option value="" disabled>Select a Plan</option>
               {availablePlans.map(plan => (
-                <option key={plan._id} value={plan._id}>
-                  {plan.name}
-                </option>
+                <option key={plan._id} value={plan._id}>{plan.name}</option>
               ))}
             </select>
           </div>
           <div style={{ marginBottom: '20px' }}>
             <label><strong>Plan Integrations:</strong></label>
             <ul style={{ paddingLeft: '20px' }}>
-              {orgPlan?.integrations?.map(integration => (
-                <li key={integration} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <span style={{ color: '#4CAF50' }}>✓</span> {integration}
-                </li>
-              ))}
-              {(!orgPlan?.integrations || orgPlan.integrations.length === 0) && (
+              {orgIntegrations.length > 0 ? (
+                orgIntegrations.map(integration => (
+                  <li key={integration} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ color: '#4CAF50' }}>✓</span> {integration}
+                  </li>
+                ))
+              ) : (
                 <li style={{ color: '#888' }}>No integrations available in this plan</li>
               )}
             </ul>

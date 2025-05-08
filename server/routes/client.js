@@ -4,10 +4,12 @@ const { protect } = require('../middleware/authMiddleware');
 const { hasRole } = require('../middleware/roleMiddleware');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
+const Plan = require('../models/Plan');
+const Workflow = require('../models/Workflow');
 
 const router = express.Router();
 
-// ✅ Welcome route with org name
+// ✅ Welcome route with org name and populated plan
 router.get('/portal', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -16,7 +18,7 @@ router.get('/portal', protect, hasRole('client_admin', 'client_editor', 'client_
       return res.status(404).json({ message: 'Organization not found' });
     }
 
-    const org = await Organization.findById(user.orgId);
+    const org = await Organization.findById(user.orgId).populate('plan');
     if (!org) {
       return res.status(404).json({ message: 'Organization not found' });
     }
@@ -24,11 +26,141 @@ router.get('/portal', protect, hasRole('client_admin', 'client_editor', 'client_
     res.json({
       orgName: org.name,
       orgId: org._id,
-      orgCode: org.orgId
+      orgCode: org.orgId,
+      planName: org.plan?.name || 'None',
+      allowedIntegrations: org.plan?.integrations || [],
+      enabledFeatures: org.enabledFeatures || []
     });
   } catch (err) {
     console.error('Error fetching client portal data:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ✅ Save workflow
+router.post('/workflows', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const { name, trigger, steps, status } = req.body;
+
+    if (!name || !trigger?.type || !Array.isArray(steps) || steps.length === 0) {
+      return res.status(400).json({ message: 'Name, trigger type, and steps are required.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user || !user.orgId) {
+      return res.status(400).json({ message: 'Invalid user/org context.' });
+    }
+
+    const workflow = await Workflow.create({
+      name,
+      orgId: user.orgId,
+      trigger,
+      steps,
+      status: status || 'inactive'
+    });
+
+    res.status(201).json({ message: 'Workflow created.', workflow });
+  } catch (err) {
+    console.error('Error saving workflow:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ✅ Get single workflow for editing
+router.get('/workflows/:id', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const workflow = await Workflow.findById(req.params.id);
+    if (!workflow) return res.status(404).json({ message: 'Workflow not found.' });
+    res.json({ workflow });
+  } catch (err) {
+    console.error('Error fetching workflow:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ✅ Update existing workflow
+router.put('/workflows/:id', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const { name, trigger, steps, status } = req.body;
+
+    if (!name || !trigger?.type || !Array.isArray(steps) || steps.length === 0) {
+      return res.status(400).json({ message: 'Name, trigger type, and steps are required.' });
+    }
+
+    const workflow = await Workflow.findByIdAndUpdate(
+      req.params.id,
+      { name, trigger, steps, status },
+      { new: true, runValidators: true }
+    );
+
+    if (!workflow) return res.status(404).json({ message: 'Workflow not found.' });
+
+    res.json({ message: 'Workflow updated.', workflow });
+  } catch (err) {
+    console.error('Error updating workflow:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// [All other routes remain unchanged]
+
+module.exports = router;
+
+
+// ✅ Get workflows for current org
+router.get('/workflows', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const workflows = await Workflow.find({ orgId: user.orgId });
+    res.json({ workflows });
+  } catch (err) {
+    console.error('Error fetching workflows:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ✅ Enable workflow
+router.post('/workflows/:id/enable', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const workflow = await Workflow.findById(req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ message: 'Workflow not found' });
+    }
+
+    workflow.status = 'active';
+    await workflow.save();
+    res.json({ message: 'Workflow enabled' });
+  } catch (err) {
+    console.error('Enable workflow error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ✅ Disable workflow
+router.post('/workflows/:id/disable', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const workflow = await Workflow.findById(req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ message: 'Workflow not found' });
+    }
+
+    workflow.status = 'inactive';
+    await workflow.save();
+    res.json({ message: 'Workflow disabled' });
+  } catch (err) {
+    console.error('Disable workflow error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ✅ Delete a workflow
+router.delete('/workflows/:id', protect, hasRole('client_admin'), async (req, res) => {
+  try {
+    await Workflow.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Workflow deleted.' });
+  } catch (err) {
+    console.error('Error deleting workflow:', err);
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 
@@ -40,21 +172,12 @@ router.get('/integrations', protect, hasRole('client_admin', 'client_editor', 'c
       return res.status(404).json({ message: 'User or organization not found.' });
     }
 
-    const org = await Organization.findById(user.orgId);
+    const org = await Organization.findById(user.orgId).populate('plan');
     if (!org) {
       return res.status(404).json({ message: 'Organization not found.' });
     }
 
-    // Fallback plan-based allowed integrations
-    const defaultPlanIntegrations = {
-      starter: ['Gmail'],
-      pro: ['Gmail', 'Slack'],
-      enterprise: ['Gmail', 'Slack', 'Dropbox Sign', 'Greenhouse']
-    };
-
-    const allowed = org.allowedIntegrations?.length
-      ? org.allowedIntegrations
-      : defaultPlanIntegrations[org.plan] || [];
+    const allowed = org.plan?.integrations || [];
 
     res.json({
       allowed,
@@ -214,5 +337,52 @@ router.get('/users', protect, hasRole('client_admin'), async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
+
+// ✅ Receive trigger from external system
+router.post('/webhook', async (req, res) => {
+  const { triggerType, payload, orgId } = req.body;
+
+  if (!triggerType || !orgId) {
+    return res.status(400).json({ message: 'Missing triggerType or orgId' });
+  }
+
+  try {
+    const workflows = await Workflow.find({ orgId, 'trigger.type': triggerType, status: 'active' });
+
+    if (!workflows.length) {
+      return res.status(200).json({ message: 'No workflows matched this trigger.' });
+    }
+
+    for (const workflow of workflows) {
+      for (const step of workflow.steps) {
+        await runStep(step, payload);
+      }
+    }
+
+    res.json({ message: `Executed ${workflows.length} workflows.` });
+  } catch (err) {
+    console.error('Error processing webhook:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+async function runStep(step, payload) {
+  const { type, config } = step;
+
+  switch (type) {
+    case 'slack':
+      console.log(`Sending Slack message to #${config.channel}: ${config.message}`);
+      break;
+    case 'gmail':
+      console.log(`Sending Gmail to ${config.to}: ${config.subject}`);
+      break;
+    case 'log':
+      console.log('Log Step:', config.message || payload);
+      break;
+    default:
+      console.warn('Unknown step type:', type);
+      throw new Error(`Unsupported step type: ${type}`);
+  }
+}
 
 module.exports = router;

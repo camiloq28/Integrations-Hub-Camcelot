@@ -5,6 +5,8 @@ import ClientPortal from './pages/ClientPortal';
 import UserProfile from './pages/UserProfile';
 import PlanManagement from './pages/PlanManagement';
 import UserManagement from './pages/UserManagement';
+import WorkflowBuilder from './pages/WorkflowBuilder';
+import WorkflowManagement from './pages/WorkflowManagement';
 import OrganizationUserManagement from './pages/OrganizationUserManagement';
 
 function App() {
@@ -17,6 +19,9 @@ function App() {
         <Route path="/profile" element={<UserProfile />}
 />
         <Route path="/users" element={<UserManagement />} />
+        <Route path="/client/workflows" element={<WorkflowManagement />} />
+        <Route path="/create-workflow" element={<WorkflowBuilder />} />
+        <Route path="/client/workflows/edit/:id" element={<WorkflowBuilder />} />
         <Route path="/plans" element={<PlanManagement />} />
         <Route path="/org/:orgId/users" element={<OrganizationUserManagement />} />
       </Routes>
