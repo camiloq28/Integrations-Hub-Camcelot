@@ -65,10 +65,6 @@ function WorkflowManagement() {
   const toggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-    if (!window.confirm(`Are you sure you want to ${newStatus === 'active' ? 'enable' : 'disable'} this workflow?`)) {
-      return;
-    }
-
     try {
       const res = await fetch(`/api/client/workflows/${id}`, {
         method: 'POST',

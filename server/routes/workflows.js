@@ -50,13 +50,14 @@ router.get('/client/workflows', protect, hasRole('client_admin', 'client_editor'
   }
 });
 
-// ✅ Toggle workflow status (enable/disable)
+// ✅ Toggle workflow status (active/inactive)
 router.post('/client/workflows/:id', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['active', 'disabled'].includes(status)) {
+    const validStatuses = ['active', 'inactive'];
+    if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value.' });
     }
 
