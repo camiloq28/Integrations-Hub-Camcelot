@@ -24,22 +24,28 @@ function UserProfile() {
 
     setRole(storedRole);
 
-    const normalizedRole = ['client_admin', 'client_editor', 'client_viewer'].includes(storedRole)
-      ? 'client'
-      : storedRole;
+    const profileUrl = `/api/users/profile`;
 
-    fetch(`/api/${normalizedRole}/profile`, {
+    fetch(profileUrl, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
-      .then(data => {
-        setEmail(data.email || '');
-        setFirstName(data.firstName || '');
-        setLastName(data.lastName || '');
-        setOrganization(data.organization || '');
+      .then(async res => {
+        const raw = await res.text();
+        try {
+          const data = JSON.parse(raw);
+          console.log('📦 Parsed profile JSON:', data);
+
+          setEmail(data.email || '');
+          setFirstName(data.firstName || '');
+          setLastName(data.lastName || '');
+          setOrganization(data.organization || '');
+        } catch (e) {
+          console.error('❌ Failed to parse profile JSON. Raw response:', raw);
+          toast.error('Error loading profile.');
+        }
       })
       .catch(err => {
-        console.error(err);
+        console.error('❌ Fetch error:', err);
         toast.error('Failed to load profile.');
       });
   }, [navigate]);
@@ -52,12 +58,8 @@ function UserProfile() {
       return;
     }
 
-    const normalizedRole = ['client_admin', 'client_editor', 'client_viewer'].includes(role)
-      ? 'client'
-      : role;
-
     try {
-      const res = await fetch(`/api/${normalizedRole}/profile/password`, {
+      const res = await fetch(`/api/users/profile/password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,12 +84,8 @@ function UserProfile() {
   const handleUpdateProfile = async () => {
     const token = localStorage.getItem('token');
 
-    const normalizedRole = ['client_admin', 'client_editor', 'client_viewer'].includes(role)
-      ? 'client'
-      : role;
-
     try {
-      const res = await fetch(`/api/${normalizedRole}/profile`, {
+      const res = await fetch(`/api/users/profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

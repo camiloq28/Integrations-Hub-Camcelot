@@ -8,6 +8,7 @@ const clientRoutes = require('./routes/client');
 const usersRoute = require('./routes/users');
 const planRoutes = require('./routes/planRoutes');
 const workflowRoutes = require('./routes/workflows');
+const integrationRoutes = require('./routes/integrations');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/plan', planRoutes); 
 app.use('/api', workflowRoutes);
 app.use('/api', usersRoute);
+app.use('/api/integrations', integrationRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...');
 });

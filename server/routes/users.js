@@ -25,6 +25,50 @@ router.get('/users', protect, hasRole('admin', 'client_admin'), async (req, res)
   }
 });
 
+// ✅ Profile route for client portal
+router.get('/users/profile', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select('-password')
+      .populate({
+        path: 'orgId',
+        select: 'name orgId' // 👈 pulls in organization name
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      organization: user.orgId?.name || '',
+      role: user.role,
+      orgId: user.orgId?.orgId || ''
+    });
+  } catch (err) {
+    console.error('❌ Error loading profile:', err);
+    res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
+
+// 👤 Get current logged-in user's profile
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error('❌ Error fetching user profile:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
 // ➕ Create new user (admin or client_admin)
 router.post('/users', protect, hasRole('admin', 'client_admin'), async (req, res) => {
   const { email, password, firstName, lastName, role } = req.body;

@@ -84,10 +84,16 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { _id: user._id, email: user.email, role: user.role },
+      {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        orgId: user.orgId?._id?.toString() || user.orgId
+      },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
+
     // ✅ lastLogin timestamp
     user.lastLogin = new Date();
     await user.save();

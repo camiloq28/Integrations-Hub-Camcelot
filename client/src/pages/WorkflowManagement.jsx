@@ -30,7 +30,7 @@ function WorkflowManagement() {
         setWorkflows(data.workflows || []);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         toast.error('Failed to fetch workflows');
         setLoading(false);
       });
@@ -63,24 +63,41 @@ function WorkflowManagement() {
   };
 
   const toggleStatus = async (id, currentStatus) => {
-    const action = currentStatus === 'active' ? 'disable' : 'enable';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+    if (!window.confirm(`Are you sure you want to ${newStatus === 'active' ? 'enable' : 'disable'} this workflow?`)) {
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/client/workflows/${id}/${action}`, {
+      const res = await fetch(`/api/client/workflows/${id}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const error = await res.text();
-        console.error('Error response:', error);
-        toast.error('Failed to toggle workflow');
+        console.error('Error response:', data);
+        toast.error(data.message || 'Failed to toggle workflow');
         return;
       }
 
-      toast.success(`Workflow ${action}d`);
-      setWorkflows(workflows.map((wf) =>
-        wf._id === id ? { ...wf, status: action === 'disable' ? 'inactive' : 'active' } : wf
-      ));
+      if (data.workflow) {
+        setWorkflows((prev) =>
+          prev.map((wf) => (wf._id === id ? data.workflow : wf))
+        );
+      } else {
+        setWorkflows((prev) =>
+          prev.map((wf) => (wf._id === id ? { ...wf, status: newStatus } : wf))
+        );
+      }
+
+      toast.success(`Workflow ${newStatus === 'active' ? 'enabled' : 'disabled'}`);
     } catch (err) {
       console.error('Toggle error:', err);
       toast.error('Server error');
@@ -88,18 +105,20 @@ function WorkflowManagement() {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: 'auto' }}>
+    <div style={{ maxWidth: '900px', margin: 'auto' }}>
       <h2>{orgName} Client Portal</h2>
-      <button onClick={() => navigate('/profile')} style={{ marginRight: '10px' }}>My Profile</button>
-      {['client_admin', 'client_editor'].includes(role) && (
-        <button onClick={() => navigate('/client/workflows')}>Manage Workflows</button>
-      )}
-      {['client_admin', 'client_editor'].includes(role) && (
-        <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>User Management</button>
-      )}
-      <button onClick={logout}>Logout</button>
+      <div style={{ marginBottom: '20px' }}>
+        <button onClick={() => navigate('/profile')} style={{ marginRight: '10px' }}>My Profile</button>
+        {['client_admin', 'client_editor'].includes(role) && (
+          <>
+            <button onClick={() => navigate('/client/workflows')} style={{ marginRight: '10px' }}>Manage Workflows</button>
+            <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>User Management</button>
+          </>
+        )}
+        <button onClick={logout}>Logout</button>
+      </div>
 
-      <h2>Workflow Management</h2>
+      <h3>Workflow Management</h3>
       <button onClick={() => navigate('/create-workflow')}>Create Workflow</button>
 
       {loading ? (
@@ -109,25 +128,25 @@ function WorkflowManagement() {
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Trigger</th>
-              <th>Status</th>
-              <th>Actions</th>
+            <tr style={{ borderBottom: '1px solid #ccc' }}>
+              <th style={{ textAlign: 'left' }}>Name</th>
+              <th style={{ textAlign: 'left' }}>Trigger</th>
+              <th style={{ textAlign: 'left' }}>Status</th>
+              <th style={{ textAlign: 'left' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {workflows.map((wf) => (
-              <tr key={wf._id}>
+              <tr key={wf._id} style={{ borderBottom: '1px solid #eee' }}>
                 <td>{wf.name}</td>
-                <td>{wf.trigger.type}</td>
-                <td>{wf.status}</td>
+                <td>{wf.trigger?.type}</td>
+                <td style={{ textTransform: 'capitalize' }}>{wf.status}</td>
                 <td>
                   <button onClick={() => toggleStatus(wf._id, wf.status)}>
                     {wf.status === 'active' ? 'Disable' : 'Enable'}
                   </button>
                   <Link to={`/client/workflows/edit/${wf._id}`} style={{ marginLeft: '10px' }}>Edit</Link>
-                  <button onClick={() => deleteWorkflow(wf._id)} style={{ marginLeft: '10px' }}>
+                  <button onClick={() => deleteWorkflow(wf._id)} style={{ marginLeft: '10px', color: 'red' }}>
                     Delete
                   </button>
                 </td>

@@ -10,6 +10,7 @@ function WorkflowBuilder() {
   const [trigger, setTrigger] = useState('greenhouse.new_candidate');
   const [steps, setSteps] = useState([]);
   const [orgId, setOrgId] = useState('');
+  const [availableActions, setAvailableActions] = useState({});
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -26,6 +27,17 @@ function WorkflowBuilder() {
         })
         .catch(err => console.error('❌ Error resolving orgId:', err));
     }
+  }, [token]);
+
+  useEffect(() => {
+    fetch('/api/integrations/actions', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setAvailableActions(data.integrations || {});
+      })
+      .catch(err => console.error('❌ Error loading actions:', err));
   }, [token]);
 
   useEffect(() => {
@@ -56,7 +68,7 @@ function WorkflowBuilder() {
     const newSteps = [...steps];
     newSteps[index].config = newSteps[index].config || {};
     if (field === 'type') {
-      newSteps[index] = { ...newSteps[index], type: value };
+      newSteps[index] = { ...newSteps[index], type: value, config: {} };
     } else {
       newSteps[index].config[field] = value;
     }
@@ -74,7 +86,6 @@ function WorkflowBuilder() {
     }
 
     if (!orgId || !token) {
-      console.error('❗ Missing id or token:', { id, token });
       return toast.error('Missing organization or token');
     }
 
@@ -103,7 +114,6 @@ function WorkflowBuilder() {
 
       if (!res.ok) {
         const text = await res.text();
-        console.error(`❌ ${method} failed:`, text);
         toast.error(`Error ${res.status}: ${text.slice(0, 100)}`);
         return;
       }
@@ -117,7 +127,6 @@ function WorkflowBuilder() {
         setSteps([]);
       }
     } catch (err) {
-      console.error('❌ Exception during submission:', err);
       toast.error('Server error');
     }
   };
@@ -153,54 +162,35 @@ function WorkflowBuilder() {
             <label>Step Type:</label>
             <select value={step.type} onChange={(e) => updateStep(index, 'type', e.target.value)}>
               <option value="">Select</option>
-              <option value="slack">Slack Message</option>
-              <option value="log">Log Entry</option>
-              <option value="email">Send Email</option>
+              {Object.entries(availableActions).flatMap(([integration, details]) =>
+                details.actions.map(action => (
+                  <option key={`${integration}.${action.key}`} value={`${integration}.${action.key}`}>
+                    {integration} - {action.label}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
-          {step.type === 'slack' && (
-            <>
-              <input
-                placeholder="Channel"
-                value={step.config.channel || ''}
-                onChange={(e) => updateStep(index, 'channel', e.target.value)}
-              />
-              <input
-                placeholder="Message"
-                value={step.config.message || ''}
-                onChange={(e) => updateStep(index, 'message', e.target.value)}
-              />
-            </>
-          )}
+          {step.type && (() => {
+            const [integrationKey, actionKey] = step.type.split('.');
+            const action = availableActions[integrationKey]?.actions?.find(a => a.key === actionKey);
 
-          {step.type === 'log' && (
-            <input
-              placeholder="Log Message"
-              value={step.config.message || ''}
-              onChange={(e) => updateStep(index, 'message', e.target.value)}
-            />
-          )}
+            return action?.fields?.map(field => (
+              <div key={field.name} style={{ marginBottom: '8px' }}>
+                <label>{field.label}</label>
+                <input
+                  placeholder={field.label}
+                  value={step.config[field.name] || ''}
+                  onChange={(e) => updateStep(index, field.name, e.target.value)}
+                  title="You can use dynamic tokens like {{candidate.first_name}}"
+                  style={{ width: '100%', padding: '6px' }}
+                />
+                <small style={{ color: '#888' }}>Use tokens like <code>{'{candidate.first_name}'}</code></small>
 
-          {step.type === 'email' && (
-            <>
-              <input
-                placeholder="To Email"
-                value={step.config.to || ''}
-                onChange={(e) => updateStep(index, 'to', e.target.value)}
-              />
-              <input
-                placeholder="Subject"
-                value={step.config.subject || ''}
-                onChange={(e) => updateStep(index, 'subject', e.target.value)}
-              />
-              <textarea
-                placeholder="Body"
-                value={step.config.body || ''}
-                onChange={(e) => updateStep(index, 'body', e.target.value)}
-              />
-            </>
-          )}
+              </div>
+            ));
+          })()}
 
           <button onClick={() => removeStep(index)} style={{ color: 'red', marginTop: '5px' }}>Remove Step</button>
         </div>

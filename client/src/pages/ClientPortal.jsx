@@ -26,19 +26,39 @@ function ClientPortal() {
       return;
     }
 
-    // Fetch org info and integrations
     const fetchOrgData = async () => {
       try {
-        const orgRes = await fetch('/api/client/portal', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const orgData = await orgRes.json();
+        console.log('🔐 Portal access - Token:', token);
 
-        if (!orgRes.ok) {
-          throw new Error(orgData.message || 'Failed to load portal data');
+        const orgRes = await fetch('/api/client/portal', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        let orgData;
+        try {
+          const cloned = orgRes.clone(); // clone before parsing
+          orgData = await orgRes.json();
+          console.log('📦 Parsed portal JSON:', orgData);
+        } catch (jsonErr) {
+          try {
+            const rawText = await orgRes.clone().text();
+            console.error('❌ Failed to parse JSON, raw text was:', rawText);
+          } catch (textErr) {
+            console.error('❌ Error reading raw text:', textErr);
+          }
+          throw new Error('Invalid JSON returned from portal');
         }
 
-        console.log('Portal Data:', orgData);
+
+        if (!orgRes.ok) {
+          console.error('❌ Server returned error:', orgData);
+          throw new Error(orgData.message || 'Failed to fetch portal');
+        }
+
+        if (orgData.message === 'Unauthorized: Invalid token') {
+          toast.error('Unauthorized: Invalid token');
+          throw new Error('Unauthorized');
+        }
 
         setOrgName(orgData.orgName || 'Client');
         setOrgId(orgData.orgId || '');
@@ -48,11 +68,32 @@ function ClientPortal() {
         const integrationsRes = await fetch('/api/client/integrations', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const integrationsData = await integrationsRes.json();
+
+        let integrationsData;
+        try {
+          const cloned = integrationsRes.clone();
+          integrationsData = await cloned.json();
+          console.log('🔧 Parsed integrations JSON:', integrationsData);
+        } catch (jsonErr) {
+          try {
+            const rawText = await integrationsRes.clone().text();
+            console.error('❌ Failed to parse integrations JSON, raw text was:', rawText);
+          } catch (textErr) {
+            console.error('❌ Also failed to read raw text from integrations response:', textErr);
+          }
+          throw new Error('Invalid JSON returned from integrations endpoint');
+        }
+
+
+        if (!integrationsRes.ok) {
+          console.error('❌ Server error from /integrations:', integrationsData);
+          throw new Error(integrationsData.message || 'Failed to fetch integrations');
+        }
+
         setEnabledIntegrations(integrationsData.enabled || []);
         setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error('❌ Failed to load portal:', err);
         toast.error('Failed to load portal data');
         setLoading(false);
       }
