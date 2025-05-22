@@ -1,5 +1,3 @@
-// ClientPortal.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +7,9 @@ const ClientPortal = () => {
   const [orgData, setOrgData] = useState(null);
   const [integrationStatus, setIntegrationStatus] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const formatIntegrationSlug = (name) =>
+    name?.toLowerCase().replace(/\s+/g, '-');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +57,8 @@ const ClientPortal = () => {
 
         const statuses = {};
         for (const integration of orgJson.allowedIntegrations || []) {
-          const res = await fetch(`/api/integrations/${integration.toLowerCase().replace(/\s+/g, '-')}/credentials`, {
+          const slug = formatIntegrationSlug(integration);
+          const res = await fetch(`/api/integrations/${slug}/credentials`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           statuses[integration] = res.ok;
@@ -73,7 +75,6 @@ const ClientPortal = () => {
     fetchData();
   }, []);
 
-
   const logout = () => {
     localStorage.removeItem('user');
     navigate('/login');
@@ -83,7 +84,7 @@ const ClientPortal = () => {
   if (!user || !orgData) return <div>Error loading portal data.</div>;
 
   const { role, orgId } = user;
-  const { orgName, planName, allowedIntegrations = [] } = orgData;
+  const { orgName = 'Org', planName = 'N/A', allowedIntegrations = [] } = orgData;
 
   return (
     <div style={{ maxWidth: '600px', margin: 'auto' }}>
@@ -91,12 +92,14 @@ const ClientPortal = () => {
 
       <button onClick={() => navigate('/profile')} style={{ marginRight: '10px' }}>My Profile</button>
       {['client_admin', 'client_editor'].includes(role) && (
-        <button onClick={() => navigate('/workflows')} style={{ marginRight: '10px' }}>
+        <button onClick={() => navigate('/client/workflows')} style={{ marginRight: '10px' }}>
           Manage Workflows
         </button>
       )}
-      {(role === 'client_admin' || role === 'client_editor') && (
-        <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>User Management</button>
+      {['client_admin', 'client_editor'].includes(role) && (
+        <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>
+          User Management
+        </button>
       )}
       <button onClick={logout}>Logout</button>
 
@@ -104,22 +107,31 @@ const ClientPortal = () => {
 
       <h3>Allowed Integrations</h3>
       <ul>
-        {allowedIntegrations.map((integration) => (
-          <li key={integration} style={{ marginBottom: '10px' }}>
-            <strong>{integration}</strong>
-            <span style={{ marginLeft: '10px', color: integrationStatus[integration] ? 'green' : 'red' }}>
-              {integrationStatus[integration] ? '✅ Connected' : '❌ Not Connected'}
-            </span>
-            <button
-              style={{ marginLeft: '10px' }}
-              onClick={() =>
-                navigate(`/client/integrations/${integration.toLowerCase().replace(/\s+/g, '-')}`)
-              }
-            >
-              Configure
-            </button>
-          </li>
-        ))}
+        {allowedIntegrations.map((integration) => {
+          const slug = formatIntegrationSlug(integration);
+          return (
+            <li key={integration} style={{ marginBottom: '10px' }}>
+              <strong>{integration}</strong>
+              <span style={{ marginLeft: '10px', color: integrationStatus[integration] ? 'green' : 'red' }}>
+                {integrationStatus[integration] ? '✅ Connected' : '❌ Not Connected'}
+              </span>
+              <button
+                style={{ marginLeft: '10px' }}
+                onClick={() => navigate(`/client/integrations/${slug}`)}
+              >
+                Configure
+              </button>
+              {slug === 'greenhouse' && integrationStatus[integration] && (
+                <button
+                  style={{ marginLeft: '10px' }}
+                  onClick={() => navigate('/client/integrations/greenhouse/dashboard')}
+                >
+                  Open Dashboard
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

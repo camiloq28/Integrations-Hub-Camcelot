@@ -1,5 +1,3 @@
-// /server/routes/integrations/greenhouse.js
-
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../../middleware/authMiddleware');
@@ -7,6 +5,7 @@ const { hasRole } = require('../../middleware/roleMiddleware');
 
 const IntegrationCredential = require('../../models/IntegrationCredential');
 const getIntegrationCredentials = require('../../utils/getIntegrationCredentials');
+const axios = require('axios');
 
 // ✅ Save Greenhouse API credentials
 router.post('/config', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
@@ -85,35 +84,64 @@ router.get('/status', protect, hasRole('client_admin', 'client_editor'), async (
   }
 });
 
-// Test Greenhouse Token
-router.get('/test', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+// ✅ Test Greenhouse Token via POST
+router.post('/test', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
   try {
     const credential = await IntegrationCredential.findOne({
       orgId: req.user.orgId,
-      integration: 'Greenhouse'
+      integration: 'greenhouse'
     });
 
-    if (!credential || !credential.token) {
-      return res.status(400).json({ message: 'No Greenhouse token found' });
+    if (!credential || !credential.accessToken) {
+      return res.status(400).json({ message: 'No Greenhouse access token found' });
     }
 
-    const ghResponse = await fetch('https://api.greenhouse.io/v1/users/me', {
+    const ghResponse = await fetch('https://harvest.greenhouse.io/v1/users', {
       headers: {
-        Authorization: `Basic ${Buffer.from(`${credential.token}:`).toString('base64')}`
+        Authorization: `Basic ${Buffer.from(`${credential.accessToken}:`).toString('base64')}`,
+        'Content-Type': 'application/json'
       }
     });
 
     if (!ghResponse.ok) {
-      return res.status(ghResponse.status).json({ message: 'Greenhouse API request failed' });
+      const errorText = await ghResponse.text();
+      return res.status(ghResponse.status).json({ message: `Greenhouse API request failed: ${errorText}` });
     }
 
     const data = await ghResponse.json();
     res.json({ success: true, user: data });
   } catch (error) {
-    console.error('Error testing Greenhouse token:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Error testing Greenhouse token:', error);
+    res.status(500).json({ message: 'Server error during token test' });
   }
 });
 
+// ✅ Fetch Greenhouse job listings
+router.get('/jobs', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+  try {
+    const credential = await IntegrationCredential.findOne({
+      orgId: req.user.orgId,
+      integration: 'greenhouse'
+    });
+
+    if (!credential || !credential.accessToken) {
+      return res.status(400).json({ message: 'No Greenhouse access token found' });
+    }
+
+    const ghResponse = await axios.get('https://harvest.greenhouse.io/v1/jobs', {
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${credential.accessToken}:`).toString('base64')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.status(200).json(ghResponse.data);
+  } catch (error) {
+    console.error('❌ Error fetching Greenhouse jobs:', error);
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'Unknown error';
+    res.status(status).json({ message: `Failed to fetch Greenhouse jobs: ${message}` });
+  }
+});
 
 module.exports = router;
