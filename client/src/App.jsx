@@ -6,6 +6,7 @@ import UserProfile from './pages/UserProfile';
 import PlanManagement from './pages/PlanManagement';
 import UserManagement from './pages/UserManagement';
 import WorkflowBuilder from './pages/WorkflowBuilder';
+import GreenhouseSetup from './pages/integrations/GreenhouseSetup';
 import WorkflowManagement from './pages/WorkflowManagement';
 import OrganizationUserManagement from './pages/OrganizationUserManagement';
 
@@ -14,14 +15,15 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} /> {/* ✅ Fix: Add /login route explicitly */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/client" element={<ClientPortal />} />
-        <Route path="/profile" element={<UserProfile />}
-/>
+        <Route path="/profile" element={<UserProfile />} />
         <Route path="/users" element={<UserManagement />} />
         <Route path="/client/workflows" element={<WorkflowManagement />} />
         <Route path="/create-workflow" element={<WorkflowBuilder />} />
         <Route path="/client/workflows/edit/:id" element={<WorkflowBuilder />} />
+        <Route path="/client/integrations/greenhouse" element={<GreenhouseSetup />} />
         <Route path="/plans" element={<PlanManagement />} />
         <Route path="/org/:orgId/users" element={<OrganizationUserManagement />} />
       </Routes>
@@ -30,4 +32,3 @@ function App() {
 }
 
 export default App;
-

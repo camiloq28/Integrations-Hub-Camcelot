@@ -23,11 +23,16 @@ function Login() {
 
       console.log('Returned user:', data.user); // ✅ Debug log
 
-      if (response.ok && data.user) {
+      if (response.ok && data.user && data.token) {
+        const userWithToken = {
+          ...data.user,
+          token: data.token,
+          setupComplete: data.user.setupComplete || false
+        };
+
+        localStorage.setItem('user', JSON.stringify(userWithToken));
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.user.role);
-
-        // ✅ Optionally store additional profile data
         localStorage.setItem('firstName', data.user.firstName || '');
         localStorage.setItem('lastName', data.user.lastName || '');
         localStorage.setItem('organization', data.user.organization || '');
@@ -35,17 +40,27 @@ function Login() {
 
         toast.success('Login successful!');
 
-        // ✅ Redirect based on expanded roles
-        setTimeout(() => {
+        setTimeout(async () => {
           const clientRoles = ['client_admin', 'client_editor', 'client_viewer'];
           const platformRoles = ['platform_editor', 'platform_viewer'];
 
           if (data.user.role === 'admin') {
             navigate('/admin');
           } else if (clientRoles.includes(data.user.role)) {
-            navigate('/client');
+            try {
+              const statusRes = await fetch('/api/integrations/greenhouse/status', {
+                headers: { Authorization: `Bearer ${data.token}` }
+              });
+              const status = await statusRes.json();
+
+              const redirectToSetup = !status.connected && data.user.role === 'client_admin';
+              navigate(redirectToSetup ? '/client/integrations/greenhouse' : '/client');
+            } catch (err) {
+              console.warn('Failed to check integration status, defaulting to /client', err);
+              navigate('/client');
+            }
           } else if (platformRoles.includes(data.user.role)) {
-            navigate('/admin'); // Update if you have a separate platform route
+            navigate('/admin');
           } else {
             toast.error('Unknown role');
           }

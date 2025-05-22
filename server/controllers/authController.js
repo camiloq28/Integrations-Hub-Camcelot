@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
+const IntegrationCredential = require('../models/IntegrationCredential');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
@@ -98,6 +99,13 @@ const login = async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
+    // ✅ Check integration setup
+    const credentials = await IntegrationCredential.findOne({
+      orgId: user.orgId?._id || user.orgId,
+      service: 'greenhouse'
+    });
+    const setupComplete = !!credentials;
+
     res.json({
       token,
       user: {
@@ -106,7 +114,8 @@ const login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         orgId: user.orgId?.orgId || '',
-        organization: user.orgId?.name || ''
+        organization: user.orgId?.name || '',
+        setupComplete
       }
     });
   } catch (err) {
