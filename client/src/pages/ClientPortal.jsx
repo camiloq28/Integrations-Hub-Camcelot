@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosWithAuth from '../utils/axiosWithAuth';
 
 const ClientPortal = () => {
   const navigate = useNavigate();
@@ -40,28 +41,22 @@ const ClientPortal = () => {
       setUser(storedUser);
 
       try {
-        const token = storedUser.token;
+        const axiosAuth = axiosWithAuth();
 
-        const orgRes = await fetch('/api/client/portal', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (!orgRes.ok) {
-          const raw = await orgRes.text();
-          throw new Error(`❌ Failed to fetch portal: ${orgRes.status} ${raw}`);
-        }
-
-        const orgJson = await orgRes.json();
+        const orgRes = await axiosAuth.get('/api/client/portal');
+        const orgJson = orgRes.data;
         console.log("📦 Parsed portal JSON:", orgJson);
         setOrgData(orgJson);
 
         const statuses = {};
         for (const integration of orgJson.allowedIntegrations || []) {
           const slug = formatIntegrationSlug(integration);
-          const res = await fetch(`/api/integrations/${slug}/credentials`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          statuses[integration] = res.ok;
+          try {
+            await axiosAuth.get(`/api/integrations/${slug}/credentials`);
+            statuses[integration] = true;
+          } catch {
+            statuses[integration] = false;
+          }
         }
         console.log("🔧 Parsed integrations JSON:", statuses);
         setIntegrationStatus(statuses);

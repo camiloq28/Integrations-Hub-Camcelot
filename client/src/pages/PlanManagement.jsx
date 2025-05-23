@@ -9,6 +9,10 @@ function PlanManagement() {
   const [plans, setPlans] = useState([]);
   const [newIntegration, setNewIntegration] = useState('');
   const [selectedIntegrations, setSelectedIntegrations] = useState([]);
+  const [availableTriggers, setAvailableTriggers] = useState([]);
+  const [availableActions, setAvailableActions] = useState([]);
+  const [selectedTriggers, setSelectedTriggers] = useState([]);
+  const [selectedActions, setSelectedActions] = useState([]);
   const [newPlanName, setNewPlanName] = useState('');
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
@@ -16,7 +20,25 @@ function PlanManagement() {
   useEffect(() => {
     fetchIntegrations();
     fetchPlans();
+    fetchTriggerAndActions();
   }, []);
+
+  const fetchTriggerAndActions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const [triggerRes, actionRes] = await Promise.all([
+        fetch('/api/integrations/triggers', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/integrations/actions', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      const triggerData = await triggerRes.json();
+      const actionData = await actionRes.json();
+      setAvailableTriggers(triggerData.triggers || []);
+      setAvailableActions(actionData.actions || []);
+    } catch (err) {
+      console.error('Error loading triggers/actions:', err);
+      toast.error('Failed to fetch triggers or actions');
+    }
+  };
 
   const fetchIntegrations = async () => {
     try {
@@ -88,7 +110,9 @@ function PlanManagement() {
 
     const payload = {
       name: newPlanName,
-      integrations: selectedIntegrations
+      integrations: selectedIntegrations,
+      allowedTriggers: selectedTriggers,
+      allowedActions: selectedActions
     };
 
     const url = editingPlan ? `/api/plan/plans/${editingPlan._id}` : '/api/plan/plans';
@@ -111,6 +135,8 @@ function PlanManagement() {
         setNewPlanName('');
         setSelectedIntegrations([]);
         setShowPlanForm(false);
+        setSelectedTriggers([]);
+        setSelectedActions([]);
         setEditingPlan(null);
         fetchPlans();
       } else {
@@ -148,6 +174,8 @@ function PlanManagement() {
     setNewPlanName(plan.name);
     setSelectedIntegrations(plan.integrations);
     setShowPlanForm(true);
+    setSelectedTriggers(plan.allowedTriggers || []);
+    setSelectedActions(plan.allowedActions || []);
   };
 
   return (
@@ -193,6 +221,38 @@ function PlanManagement() {
               onChange={e => setNewPlanName(e.target.value)}
               style={{ width: '100%', padding: '8px', marginBottom: '15px' }}
             />
+            <h4>Select Triggers</h4>
+            {availableTriggers.map((trigger, idx) => (
+              <label key={idx} style={{ display: 'block', marginBottom: '5px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedTriggers.includes(trigger.key)}
+                  onChange={() => setSelectedTriggers(prev =>
+                    prev.includes(trigger.key)
+                      ? prev.filter(k => k !== trigger.key)
+                      : [...prev, trigger.key]
+                  )}
+                />{' '}
+                [{trigger.integration}] {trigger.label}
+              </label>
+            ))}
+
+            <h4 style={{ marginTop: '20px' }}>Select Actions</h4>
+            {availableActions.map((action, idx) => (
+              <label key={idx} style={{ display: 'block', marginBottom: '5px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedActions.includes(action.key)}
+                  onChange={() => setSelectedActions(prev =>
+                    prev.includes(action.key)
+                      ? prev.filter(k => k !== action.key)
+                      : [...prev, action.key]
+                  )}
+                />{' '}
+                [{action.integration}] {action.label}
+              </label>
+            ))}
+
             <h4>Select Integrations</h4>
             {integrations.map((integration, idx) => (
               <label key={idx} style={{ display: 'block', marginBottom: '5px' }}>

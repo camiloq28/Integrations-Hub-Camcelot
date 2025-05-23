@@ -9,9 +9,22 @@ const { hasRole } = require('../middleware/roleMiddleware');
 const router = express.Router();
 
 // 🔹 Load available integration actions
-router.get('/actions', (req, res) => {
+router.get('/actions', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
   try {
-    const integrations = loadActions();
+    const { orgId } = req.user;
+    const registry = loadActions();
+
+    // Optionally filter based on plan in future
+    const allActions = Object.entries(registry).flatMap(([integration, meta]) =>
+      (meta.actions || []).map((action) => ({ integration, ...action }))
+    );
+
+    res.json({ actions: allActions });
+  } catch (err) {
+    console.error('Error loading actions:', err);
+    res.status(500).json({ message: 'Failed to load actions' });
+  }
+});
     res.json({ integrations });
   } catch (err) {
     console.error('Error loading actions:', err);
@@ -70,6 +83,28 @@ router.get('/credentials/:integration', protect, async (req, res) => {
   } catch (err) {
     console.error('Error fetching credentials:', err);
     res.status(500).json({ message: 'Failed to fetch credentials' });
+  }
+});
+
+// 🔹 Load available triggers based on integration and plan
+router.get('/triggers', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+  try {
+    const { orgId } = req.user;
+
+    // Load trigger registry
+    const registry = loadActions();
+    const allTriggers = Object.entries(registry).flatMap(([integration, meta]) =>
+      (meta.triggers || []).map((trigger) => ({ integration, ...trigger }))
+    );
+
+    // Optional: Load plan to filter allowed triggers
+    // const plan = await Plan.findOne({ orgId });
+    // const allowed = plan?.allowedTriggers || [];
+
+    res.json({ triggers: allTriggers });
+  } catch (err) {
+    console.error('Error loading triggers:', err);
+    res.status(500).json({ message: 'Failed to load triggers' });
   }
 });
 

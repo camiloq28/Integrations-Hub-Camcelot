@@ -1,3 +1,5 @@
+// /client/src/pages/Login.jsx
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
@@ -30,6 +32,8 @@ function Login() {
           setupComplete: data.user.setupComplete || false
         };
 
+        const oneHour = 60 * 60 * 1000;
+        userWithToken.tokenExpiry = Date.now() + oneHour;
         localStorage.setItem('user', JSON.stringify(userWithToken));
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.user.role);

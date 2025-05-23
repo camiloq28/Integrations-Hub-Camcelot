@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import 'react-toastify/dist/ReactToastify.css';
 
 function WorkflowBuilder() {
@@ -11,43 +12,43 @@ function WorkflowBuilder() {
   const [steps, setSteps] = useState([]);
   const [orgId, setOrgId] = useState('');
   const [availableActions, setAvailableActions] = useState({});
-  const token = localStorage.getItem('token');
+  const [availableTriggers, setAvailableTriggers] = useState([]);
+
+  const axiosAuth = axiosWithAuth();
 
   useEffect(() => {
     const storedOrgId = localStorage.getItem('orgId');
-    if (storedOrgId && token) {
-      fetch(`/api/admin/orgs/by-custom-id/${storedOrgId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data._id) {
-            setOrgId(data._id);
-          }
-        })
+    if (storedOrgId) {
+      axiosAuth.get(`/api/admin/orgs/by-custom-id/${storedOrgId}`)
+        .then(res => setOrgId(res.data._id))
         .catch(err => console.error('❌ Error resolving orgId:', err));
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    fetch('/api/integrations/actions', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setAvailableActions(data.integrations || {});
+    axiosAuth.get('/api/integrations/actions')
+      .then(res => {
+        const grouped = res.data.actions.reduce((acc, action) => {
+          if (!acc[action.integration]) acc[action.integration] = { actions: [] };
+          acc[action.integration].actions.push(action);
+          return acc;
+        }, {});
+        setAvailableActions(grouped);
       })
       .catch(err => console.error('❌ Error loading actions:', err));
-  }, [token]);
+
+    axiosAuth.get('/api/integrations/triggers')
+      .then(res => {
+        setAvailableTriggers(res.data.triggers || []);
+      })
+      .catch(err => console.error('❌ Error loading triggers:', err));
+  }, []);
 
   useEffect(() => {
-    if (id && token) {
-      fetch(`/api/client/workflows/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => {
-          const workflow = data.workflow;
+    if (id) {
+      axiosAuth.get(`/api/client/workflows/${id}`)
+        .then(res => {
+          const workflow = res.data.workflow;
           if (workflow) {
             setName(workflow.name || '');
             const { type, source } = workflow.trigger || {};
@@ -58,7 +59,7 @@ function WorkflowBuilder() {
         })
         .catch(err => toast.error('Failed to load workflow'));
     }
-  }, [id, token]);
+  }, [id]);
 
   const addStep = () => {
     setSteps([...steps, { order: steps.length + 1, type: '', config: {} }]);
@@ -85,8 +86,8 @@ function WorkflowBuilder() {
       return toast.error('Please fill out all fields and ensure each step has a type and order');
     }
 
-    if (!orgId || !token) {
-      return toast.error('Missing organization or token');
+    if (!orgId) {
+      return toast.error('Missing organization');
     }
 
     const payload = {
@@ -101,24 +102,10 @@ function WorkflowBuilder() {
 
     try {
       const url = id ? `/api/client/workflows/${id}` : '/api/client/workflows';
-      const method = id ? 'PUT' : 'POST';
+      const method = id ? 'put' : 'post';
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await axiosAuth[method](url, payload);
 
-      if (!res.ok) {
-        const text = await res.text();
-        toast.error(`Error ${res.status}: ${text.slice(0, 100)}`);
-        return;
-      }
-
-      const data = await res.json();
       toast.success(`Workflow ${id ? 'updated' : 'created'} successfully`);
 
       if (!id) {
@@ -149,30 +136,34 @@ function WorkflowBuilder() {
       <div style={{ marginBottom: '15px' }}>
         <label><strong>Trigger:</strong></label>
         <select value={trigger} onChange={(e) => setTrigger(e.target.value)}>
-          <option value="greenhouse.new_candidate">Greenhouse - New Candidate</option>
-          <option value="greenhouse.new_hire">Greenhouse - New Hire</option>
-          <option value="greenhouse.stage_change">Greenhouse - Stage Change</option>
+          <option value="">Select Trigger</option>
+          {availableTriggers.map((t, idx) => (
+            <option key={idx} value={`${t.integration}.${t.key}`}>
+              {t.integration} - {t.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      <h3>Steps</h3>
       {steps.map((step, index) => (
-        <div key={index} style={{ marginBottom: '20px', borderBottom: '1px solid #ccc', paddingBottom: '10px' }}>
-          <div>
-            <label>Step Type:</label>
-            <select value={step.type} onChange={(e) => updateStep(index, 'type', e.target.value)}>
-              <option value="">Select</option>
-              {Object.entries(availableActions).flatMap(([integration, details]) =>
-                details.actions.map(action => (
-                  <option key={`${integration}.${action.key}`} value={`${integration}.${action.key}`}>
-                    {integration} - {action.label}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+        <div key={index} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
+          <label><strong>Step {index + 1}:</strong></label>
+          <select
+            value={step.type}
+            onChange={(e) => updateStep(index, 'type', e.target.value)}
+            style={{ display: 'block', marginBottom: '10px' }}
+          >
+            <option value="">Select Action</option>
+            {Object.entries(availableActions).flatMap(([integration, meta]) =>
+              meta.actions.map((action, idx) => (
+                <option key={`${integration}-${idx}`} value={`${integration}.${action.key}`}>
+                  {integration} - {action.label}
+                </option>
+              ))
+            )}
+          </select>
 
-          {step.type && (() => {
+          {(() => {
             const [integrationKey, actionKey] = step.type.split('.');
             const action = availableActions[integrationKey]?.actions?.find(a => a.key === actionKey);
 
@@ -187,7 +178,6 @@ function WorkflowBuilder() {
                   style={{ width: '100%', padding: '6px' }}
                 />
                 <small style={{ color: '#888' }}>Use tokens like <code>{'{candidate.first_name}'}</code></small>
-
               </div>
             ));
           })()}
