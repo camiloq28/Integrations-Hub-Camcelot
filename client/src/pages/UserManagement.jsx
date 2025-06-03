@@ -93,14 +93,9 @@ function UserManagement() {
     const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
     try {
       const axiosAuth = axiosWithAuth();
-    const res = await axiosAuth.put(`/api/users/${email}/status`, { status: newStatus });
-    const data = res.data;
-      if (res.ok) {
-        toast.success('Status updated');
-        fetchUsers();
-      } else {
-        toast.error(data.message || 'Failed to update status');
-      }
+      const res = await axiosAuth.put(`/api/users/${email}/status`, { status: newStatus });
+      toast.success('Status updated');
+      fetchUsers();
     } catch (err) {
       console.error(err);
       toast.error('Server error while updating status');
@@ -116,16 +111,10 @@ function UserManagement() {
 
     try {
       const axiosAuth = axiosWithAuth();
-    const res = await axiosAuth.post('/api/users', newUser);
-    const data = res.data;
-
-      if (res.ok) {
-        toast.success('User created successfully');
-        setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'client_editor' });
-        fetchUsers();
-      } else {
-        toast.error(data.message || 'Failed to create user');
-      }
+      const res = await axiosAuth.post('/api/users', newUser);
+      toast.success('User created successfully');
+      setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'client_editor' });
+      fetchUsers();
     } catch (err) {
       console.error(err);
       toast.error('Server error while creating user');
@@ -142,16 +131,11 @@ function UserManagement() {
 
     try {
       const axiosAuth = axiosWithAuth();
-    const res = await axiosAuth.put(`/api/users/${editingUser.email}`, editFields);
-    const data = res.data;
-      if (res.ok) {
-        toast.success('User updated');
-        setEditingUser(null);
-        setEditFields({});
-        fetchUsers();
-      } else {
-        toast.error(data.message || 'Failed to update user');
-      }
+      const res = await axiosAuth.put(`/api/users/${editingUser.email}`, editFields);
+      toast.success('User updated');
+      setEditingUser(null);
+      setEditFields({});
+      fetchUsers();
     } catch (err) {
       console.error(err);
       toast.error('Server error during update');
@@ -163,14 +147,9 @@ function UserManagement() {
 
     try {
       const axiosAuth = axiosWithAuth();
-    const res = await axiosAuth.delete(`/api/users/${email}`);
-    const data = res.data;
-      if (res.ok) {
-        toast.success(data.message);
-        fetchUsers();
-      } else {
-        toast.error(data.message || 'Delete failed');
-      }
+      const res = await axiosAuth.delete(`/api/users/${email}`);
+      toast.success('User deleted successfully');
+      fetchUsers();
     } catch (err) {
       console.error(err);
       toast.error('Server error while deleting user');
