@@ -6,7 +6,7 @@ const { protect } = require('../../middleware/authMiddleware');
 const { hasRole } = require('../../middleware/roleMiddleware');
 const { getAllIntegrationMetadata } = require('../../utils/loadIntegrationMetadata');
 
-router.get('/', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+router.get('/', protect, hasRole('admin', 'platform_editor', 'client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
   try {
     const metadata = await getAllIntegrationMetadata();
     res.json(metadata);
