@@ -10,7 +10,7 @@ function WorkflowBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [trigger, setTrigger] = useState('greenhouse.new_candidate');
+  const [trigger, setTrigger] = useState('');
   const [steps, setSteps] = useState([]);
   const [orgId, setOrgId] = useState('');
   const [availableActions, setAvailableActions] = useState({});
@@ -19,59 +19,42 @@ function WorkflowBuilder() {
   const axiosAuth = axiosWithAuth();
 
   useEffect(() => {
-    const fetchOrg = async () => {
+    const fetchData = async () => {
       try {
         const portalRes = await axiosAuth.get('/api/client/portal');
         const portalData = portalRes.data;
-        console.log('📦 Portal Data:', portalData);
         setOrgId(portalData.orgId);
 
         const allowedActions = portalData.allowedActions || [];
         const allowedTriggers = portalData.allowedTriggers || [];
 
-        const actionsRes = await axiosAuth.get('/api/integrations/actions');
-        const grouped = actionsRes.data.actions.reduce((acc, action) => {
-          if (!acc[action.integration]) acc[action.integration] = { actions: [] };
-          acc[action.integration].actions.push(action);
-          return acc;
-        }, {});
+        const metaRes = await axiosAuth.get('/api/integrations/meta');
+        const { actionsByIntegration, triggersByIntegration } = metaRes.data;
 
-        const allowedActionSet = new Set(allowedActions.map(String));
-
-        const filtered = {};
-        for (const [integration, meta] of Object.entries(grouped)) {
-          const filteredActions = meta.actions.filter(action =>
-            allowedActionSet.has(action.key)
+        const filteredActions = {};
+        for (const [integration, meta] of Object.entries(actionsByIntegration)) {
+          const filtered = meta.actions.filter(action =>
+            allowedActions.includes(`${integration}.${action.key}`)
           );
-          if (filteredActions.length > 0) {
-            filtered[integration] = { actions: filteredActions };
-          }
+          if (filtered.length) filteredActions[integration] = { actions: filtered };
         }
 
-        console.log('✅ All Actions Grouped:', grouped);
-        console.log('✅ Allowed Actions:', Array.from(allowedActionSet));
-        console.log('✅ Filtered Actions:', filtered);
+        const filteredTriggers = [];
+        for (const [integration, meta] of Object.entries(triggersByIntegration)) {
+          const filtered = meta.triggers.filter(trigger =>
+            allowedTriggers.includes(`${integration}.${trigger.key}`)
+          ).map(trigger => ({ ...trigger, integration }));
+          filteredTriggers.push(...filtered);
+        }
 
-        Object.entries(filtered).forEach(([integration, meta]) => {
-          meta.actions.forEach((action) => {
-            console.log(`🔽 Rendering dropdown option for ${integration} - ${action.key}`);
-          });
-        });
-
-        setAvailableActions(filtered);
-
-        const triggersRes = await axiosAuth.get('/api/integrations/triggers');
-        const filteredTriggers = triggersRes.data.triggers.filter(t =>
-          allowedTriggers.includes(t.key)
-        );
-        console.log('✅ Allowed Triggers:', allowedTriggers);
+        setAvailableActions(filteredActions);
         setAvailableTriggers(filteredTriggers);
       } catch (err) {
-        console.error('❌ Error loading portal or plan:', err);
+        console.error('❌ Error loading metadata or portal:', err);
       }
     };
 
-    fetchOrg();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -83,11 +66,10 @@ function WorkflowBuilder() {
             setName(workflow.name || '');
             const { type, source } = workflow.trigger || {};
             if (type && source) setTrigger(`${source}.${type}`);
-            else if (type) setTrigger(`greenhouse.${type}`);
             setSteps(Array.isArray(workflow.steps) ? workflow.steps : []);
           }
         })
-        .catch(err => toast.error('Failed to load workflow'));
+        .catch(() => toast.error('Failed to load workflow'));
     }
   }, [id]);
 
@@ -116,9 +98,7 @@ function WorkflowBuilder() {
       return toast.error('Please fill out all fields and ensure each step has a type and order');
     }
 
-    if (!orgId) {
-      return toast.error('Missing organization');
-    }
+    if (!orgId) return toast.error('Missing organization');
 
     const payload = {
       name,
@@ -133,14 +113,11 @@ function WorkflowBuilder() {
     try {
       const url = id ? `/api/client/workflows/${id}` : '/api/client/workflows';
       const method = id ? 'put' : 'post';
-
-      const res = await axiosAuth[method](url, payload);
-
+      await axiosAuth[method](url, payload);
       toast.success(`Workflow ${id ? 'updated' : 'created'} successfully`);
-
       if (!id) {
         setName('');
-        setTrigger('greenhouse.new_candidate');
+        setTrigger('');
         setSteps([]);
       }
     } catch (err) {
@@ -169,7 +146,7 @@ function WorkflowBuilder() {
           <option value="">Select Trigger</option>
           {availableTriggers.map((t, idx) => (
             <option key={idx} value={`${t.integration}.${t.key}`}>
-              {t.integration} - {t.label}
+              {t.integration} - {t.label || t.key}
             </option>
           ))}
         </select>
@@ -187,11 +164,11 @@ function WorkflowBuilder() {
             {Object.entries(availableActions).flatMap(([integration, meta]) =>
               meta.actions.map((action) => (
                 <option
-  key={`${integration}.${action.key}`}
-  value={`${integration}.${action.key}`}
->
-  {integration} - {action.label || action.key}
-</option>
+                  key={`${integration}.${action.key}`}
+                  value={`${integration}.${action.key}`}
+                >
+                  {integration} - {action.label || action.key}
+                </option>
               ))
             )}
           </select>

@@ -9,7 +9,10 @@ const usersRoute = require('./routes/users');
 const planRoutes = require('./routes/planRoutes');
 const workflowRoutes = require('./routes/workflows');
 const integrationRoutes = require('./routes/integrations');
+const metaRoutes = require('./routes/integrations/meta');
 const greenhouseRoutes = require('./routes/integrations/greenhouse');
+
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +29,7 @@ app.use('/api/plan', planRoutes);
 app.use('/api', workflowRoutes);
 app.use('/api', usersRoute);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/integrations/meta', metaRoutes);
 app.use('/api/integrations/greenhouse', greenhouseRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...');

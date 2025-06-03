@@ -103,4 +103,9 @@ router.get('/triggers', protect, hasRole('client_admin', 'client_editor', 'clien
   }
 });
 
+// ✅ Mount modular metadata route
+const metaRoutes = require('./integrations/meta');
+router.use('/meta', metaRoutes);
+
+
 module.exports = router;
