@@ -37,13 +37,8 @@ function WorkflowManagement() {
     try {
       const axiosAuth = axiosWithAuth();
       const res = await axiosAuth.delete(`/api/client/workflows/${id}`);
-      const data = res.data;
-      if (res.ok) {
-        toast.success('Workflow deleted');
-        setWorkflows(workflows.filter((wf) => wf._id !== id));
-      } else {
-        toast.error(data.message || 'Delete failed');
-      }
+      toast.success('Workflow deleted');
+      setWorkflows(workflows.filter((wf) => wf._id !== id));
     } catch (err) {
       console.error(err);
       toast.error('Server error');
@@ -68,7 +63,7 @@ function WorkflowManagement() {
         );
       }
 
-      toast.success(`Workflow ${newStatus === 'active' ? 'enabled' : 'disabled'}`);
+      toast.success(`Workflow ${newStatus === 'active' ? 'enabled' : 'disabled'} successfully`);
     } catch (err) {
       console.error('Toggle error:', err);
       toast.error('Server error');
