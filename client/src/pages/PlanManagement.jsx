@@ -214,7 +214,9 @@ function PlanManagement() {
       <button onClick={addIntegration}>Add Integration</button>
       <ul>
         {integrations.map((i, idx) => (
-          <li key={`integration-${i}-${idx}`}>{i}</li>
+          <li key={`integration-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
+            {typeof i === 'object' ? i.name : i}
+          </li>
         ))}
       </ul>
 
@@ -232,18 +234,21 @@ function PlanManagement() {
           />
 
           <h4>Select Integrations</h4>
-          {integrations.map((i, idx) => (
-            <div key={`select-${i}-${idx}`}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedIntegrations.includes(i)}
-                  onChange={() => toggleIntegration(i)}
-                />
-                {i}
-              </label>
-            </div>
-          ))}
+          {integrations.map((i, idx) => {
+            const integrationName = typeof i === 'object' ? i.name : i;
+            return (
+              <div key={`select-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selectedIntegrations.includes(integrationName)}
+                    onChange={() => toggleIntegration(integrationName)}
+                  />
+                  {integrationName}
+                </label>
+              </div>
+            );
+          })}
 
           {selectedIntegrations.length > 0 && (
             <>
