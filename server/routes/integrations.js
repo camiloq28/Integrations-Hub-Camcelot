@@ -9,7 +9,7 @@ const { hasRole } = require('../middleware/roleMiddleware');
 const router = express.Router();
 
 // 🔹 Load available integration actions
-router.get('/actions', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+router.get('/actions', protect, hasRole('client_admin', 'client_editor', 'client_viewer', 'admin', 'platform_admin'), async (req, res) => {
   try {
     const { orgId } = req.user;
     const registry = loadActions();
@@ -25,12 +25,7 @@ router.get('/actions', protect, hasRole('client_admin', 'client_editor', 'client
     res.status(500).json({ message: 'Failed to load actions' });
   }
 });
-    res.json({ integrations });
-  } catch (err) {
-    console.error('Error loading actions:', err);
-    res.status(500).json({ message: 'Failed to load actions' });
-  }
-});
+
 
 // 🔹 Save or update credentials for an integration
 router.post('/credentials', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
@@ -87,7 +82,7 @@ router.get('/credentials/:integration', protect, async (req, res) => {
 });
 
 // 🔹 Load available triggers based on integration and plan
-router.get('/triggers', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+router.get('/triggers', protect, hasRole('client_admin', 'client_editor', 'client_viewer', 'admin', 'platform_admin'), async (req, res) => {
   try {
     const { orgId } = req.user;
 

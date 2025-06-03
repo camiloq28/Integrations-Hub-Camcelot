@@ -1,4 +1,7 @@
+// /client/src/pages/PlanManagement.jsx
+
 import { useEffect, useState } from 'react';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -25,15 +28,13 @@ function PlanManagement() {
 
   const fetchTriggerAndActions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const axiosAuth = axiosWithAuth();
       const [triggerRes, actionRes] = await Promise.all([
-        fetch('/api/integrations/triggers', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/integrations/actions', { headers: { Authorization: `Bearer ${token}` } })
+        axiosAuth.get('/api/integrations/triggers'),
+        axiosAuth.get('/api/integrations/actions')
       ]);
-      const triggerData = await triggerRes.json();
-      const actionData = await actionRes.json();
-      setAvailableTriggers(triggerData.triggers || []);
-      setAvailableActions(actionData.actions || []);
+      setAvailableTriggers(triggerRes.data.triggers || []);
+      setAvailableActions(actionRes.data.actions || []);
     } catch (err) {
       console.error('Error loading triggers/actions:', err);
       toast.error('Failed to fetch triggers or actions');
@@ -42,11 +43,9 @@ function PlanManagement() {
 
   const fetchIntegrations = async () => {
     try {
-      const res = await fetch('/api/plan/integrations', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
-      setIntegrations(data.integrations || []);
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.get('/api/plan/integrations');
+      setIntegrations(res.data.integrations || []);
     } catch (err) {
       console.error('Integration fetch error:', err);
       toast.error('Failed to fetch integrations');
@@ -55,11 +54,9 @@ function PlanManagement() {
 
   const fetchPlans = async () => {
     try {
-      const res = await fetch('/api/plan/plans', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await res.json();
-      setPlans(data.plans || []);
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.get('/api/plan/plans');
+      setPlans(res.data.plans || []);
     } catch (err) {
       console.error('Plan fetch error:', err);
       toast.error('Failed to fetch plans');
@@ -72,16 +69,10 @@ function PlanManagement() {
       return;
     }
     try {
-      const res = await fetch('/api/plan/integrations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ name: newIntegration })
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.post('/api/plan/integrations', { name: newIntegration });
+      const data = res.data;
+      if (res.status >= 200 && res.status < 300) {
         toast.success('Integration added');
         setNewIntegration('');
         fetchIntegrations();
@@ -119,18 +110,12 @@ function PlanManagement() {
     const method = editingPlan ? 'PUT' : 'POST';
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth({ url, method, data: payload });
 
-      const data = await res.json();
+      const data = res.data;
 
-      if (res.ok) {
+      if (res.status >= 200 && res.status < 300) {
         toast.success(editingPlan ? 'Plan updated' : 'Plan created');
         setNewPlanName('');
         setSelectedIntegrations([]);
@@ -150,12 +135,8 @@ function PlanManagement() {
 
   const deletePlan = async (id) => {
     try {
-      const res = await fetch(`/api/plan/plans/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.delete(`/api/plan/plans/${id}`);
       const data = await res.json();
       if (res.ok) {
         toast.success('Plan deleted');
@@ -170,9 +151,16 @@ function PlanManagement() {
   };
 
   const startEditPlan = (plan) => {
+    console.log('Editing plan:', plan);
     setEditingPlan(plan);
     setNewPlanName(plan.name);
-    setSelectedIntegrations(plan.integrations);
+    setSelectedIntegrations(plan.integrations || []);
+    setSelectedTriggers(plan.allowedTriggers || []);
+    console.log('Triggers loaded into state:', plan.allowedTriggers);
+    setSelectedActions(plan.allowedActions || []);
+    console.log('Actions loaded into state:', plan.allowedActions);
+    setSelectedTriggers(plan.allowedTriggers || []);
+    setSelectedActions(plan.allowedActions || []);
     setShowPlanForm(true);
     setSelectedTriggers(plan.allowedTriggers || []);
     setSelectedActions(plan.allowedActions || []);
@@ -211,7 +199,16 @@ function PlanManagement() {
       <section style={{ marginBottom: '50px' }}>
         <h3>{editingPlan ? 'Edit Plan' : 'Create New Plan'}</h3>
         {!showPlanForm ? (
-          <button onClick={() => setShowPlanForm(true)}>+ Create Plan</button>
+          <button onClick={() => {
+              setShowPlanForm(true);
+              setNewPlanName('');
+              setSelectedIntegrations([]);
+              setSelectedTriggers([]);
+              setSelectedActions([]);
+              setSelectedTriggers([]);
+              setSelectedActions([]);
+              setEditingPlan(null);
+            }}>+ Create Plan</button>
         ) : (
           <div style={{ border: '1px solid #444', padding: '20px', borderRadius: '10px', background: '#111' }}>
             <input

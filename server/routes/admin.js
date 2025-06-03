@@ -1,3 +1,5 @@
+// /server/routes/admin.js
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
@@ -16,16 +18,29 @@ router.get('/orgs', protect, adminOnly, async (req, res) => {
     const results = await Promise.all(orgs.map(async (org) => {
       const userCount = await User.countDocuments({ orgId: org._id });
       let planName = org.plan;
+      let planId = null;
+      let allowedTriggers = [];
+      let allowedActions = [];
+
       if (org.plan && typeof org.plan === 'string' && org.plan.match(/^[a-f\d]{24}$/i)) {
         const fullPlan = await Plan.findById(org.plan);
-        if (fullPlan) planName = fullPlan.name;
+        if (fullPlan) {
+          planName = fullPlan.name;
+          planId = fullPlan._id;
+          allowedTriggers = fullPlan.allowedTriggers || [];
+          allowedActions = fullPlan.allowedActions || [];
+        }
       }
+
       return {
         _id: org._id,
         name: org.name,
         orgId: org.orgId,
-        plan: planName || 'starter',
+        plan: planId || org.plan,
+        planName: planName || 'starter',
         allowedIntegrations: org.allowedIntegrations || [],
+        allowedTriggers,
+        allowedActions,
         userCount
       };
     }));
@@ -77,13 +92,27 @@ router.get('/orgs/by-custom-id/:orgId', protect, hasRole('admin', 'platform_edit
   try {
     const org = await Organization.findOne({ orgId: req.params.orgId });
     if (!org) return res.status(404).json({ message: 'Organization not found.' });
-    res.json(org);
+
+    let fullPlan = null;
+    if (org.plan && typeof org.plan === 'string' && org.plan.match(/^[a-f\d]{24}$/i)) {
+      fullPlan = await Plan.findById(org.plan);
+    }
+
+    res.json({
+      orgName: org.name,
+      orgId: org._id,
+      orgCode: org.orgCode,
+      plan: fullPlan ? fullPlan._id : null,
+      planName: fullPlan ? fullPlan.name : org.plan,
+      allowedIntegrations: fullPlan ? fullPlan.integrations : org.allowedIntegrations || [],
+      allowedTriggers: fullPlan ? fullPlan.allowedTriggers || [] : [],
+      allowedActions: fullPlan ? fullPlan.allowedActions || [] : []
+    });
   } catch (err) {
     console.error('Error resolving orgId:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 });
-
 
 // Update an organization's plan
 router.post('/orgs/:orgId/plan', protect, hasRole('admin', 'platform_editor'), async (req, res) => {

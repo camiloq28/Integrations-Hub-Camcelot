@@ -1,3 +1,5 @@
+// /server/routes/planRoutes.js
+
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
 const { hasRole } = require('../middleware/roleMiddleware');
@@ -38,7 +40,14 @@ router.post('/integrations', protect, hasRole('admin', 'platform_editor'), async
 router.get('/plans', protect, hasRole('admin', 'platform_editor'), async (req, res) => {
   try {
     const plans = await Plan.find();
-    res.json({ plans });
+    const fullPlans = plans.map(plan => ({
+      _id: plan._id,
+      name: plan.name,
+      integrations: plan.integrations,
+      allowedTriggers: plan.allowedTriggers || [],
+      allowedActions: plan.allowedActions || []
+    }));
+    res.json({ plans: fullPlans });
   } catch (err) {
     console.error('Failed to fetch plans:', err);
     res.status(500).json({ message: 'Failed to fetch plans' });
@@ -48,7 +57,7 @@ router.get('/plans', protect, hasRole('admin', 'platform_editor'), async (req, r
 // ✅ POST new plan
 router.post('/plans', protect, hasRole('admin', 'platform_editor'), async (req, res) => {
   try {
-    const { name, integrations } = req.body;
+    const { name, integrations, allowedTriggers = [], allowedActions = [] } = req.body;
     if (!name || !Array.isArray(integrations)) {
       return res.status(400).json({ message: 'Plan name and integrations are required' });
     }
@@ -56,7 +65,7 @@ router.post('/plans', protect, hasRole('admin', 'platform_editor'), async (req, 
     const existing = await Plan.findOne({ name });
     if (existing) return res.status(400).json({ message: 'Plan name already exists' });
 
-    const plan = await Plan.create({ name, integrations });
+    const plan = await Plan.create({ name, integrations, allowedTriggers, allowedActions });
     res.status(201).json({ plan });
   } catch (err) {
     console.error('Failed to create plan:', err);
@@ -67,14 +76,14 @@ router.post('/plans', protect, hasRole('admin', 'platform_editor'), async (req, 
 // ✅ PUT update plan
 router.put('/plans/:id', protect, hasRole('admin', 'platform_editor'), async (req, res) => {
   try {
-    const { name, integrations } = req.body;
+    const { name, integrations, allowedTriggers = [], allowedActions = [] } = req.body;
     if (!name || !Array.isArray(integrations)) {
       return res.status(400).json({ message: 'Plan name and integrations are required' });
     }
 
     const updated = await Plan.findByIdAndUpdate(
-      req.params.id,
-      { name, integrations },
+    req.params.id,
+    { name, integrations, allowedTriggers, allowedActions },
       { new: true }
     );
 

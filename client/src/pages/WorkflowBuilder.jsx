@@ -1,3 +1,5 @@
+// /client/src/pages/WorkflowBuilder.jsx
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
@@ -17,31 +19,59 @@ function WorkflowBuilder() {
   const axiosAuth = axiosWithAuth();
 
   useEffect(() => {
-    const storedOrgId = localStorage.getItem('orgId');
-    if (storedOrgId) {
-      axiosAuth.get(`/api/admin/orgs/by-custom-id/${storedOrgId}`)
-        .then(res => setOrgId(res.data._id))
-        .catch(err => console.error('❌ Error resolving orgId:', err));
-    }
-  }, []);
+    const fetchOrg = async () => {
+      try {
+        const portalRes = await axiosAuth.get('/api/client/portal');
+        const portalData = portalRes.data;
+        console.log('📦 Portal Data:', portalData);
+        setOrgId(portalData.orgId);
 
-  useEffect(() => {
-    axiosAuth.get('/api/integrations/actions')
-      .then(res => {
-        const grouped = res.data.actions.reduce((acc, action) => {
+        const allowedActions = portalData.allowedActions || [];
+        const allowedTriggers = portalData.allowedTriggers || [];
+
+        const actionsRes = await axiosAuth.get('/api/integrations/actions');
+        const grouped = actionsRes.data.actions.reduce((acc, action) => {
           if (!acc[action.integration]) acc[action.integration] = { actions: [] };
           acc[action.integration].actions.push(action);
           return acc;
         }, {});
-        setAvailableActions(grouped);
-      })
-      .catch(err => console.error('❌ Error loading actions:', err));
 
-    axiosAuth.get('/api/integrations/triggers')
-      .then(res => {
-        setAvailableTriggers(res.data.triggers || []);
-      })
-      .catch(err => console.error('❌ Error loading triggers:', err));
+        const allowedActionSet = new Set(allowedActions.map(String));
+
+        const filtered = {};
+        for (const [integration, meta] of Object.entries(grouped)) {
+          const filteredActions = meta.actions.filter(action =>
+            allowedActionSet.has(`${action.integration}.${action.key}`)
+          );
+          if (filteredActions.length > 0) {
+            filtered[integration] = { actions: filteredActions };
+          }
+        }
+
+        console.log('✅ All Actions Grouped:', grouped);
+        console.log('✅ Allowed Actions:', Array.from(allowedActionSet));
+        console.log('✅ Filtered Actions:', filtered);
+
+        Object.entries(filtered).forEach(([integration, meta]) => {
+          meta.actions.forEach((action) => {
+            console.log(`🔽 Rendering dropdown option for ${integration} - ${action.key}`);
+          });
+        });
+
+        setAvailableActions(filtered);
+
+        const triggersRes = await axiosAuth.get('/api/integrations/triggers');
+        const filteredTriggers = triggersRes.data.triggers.filter(t =>
+          allowedTriggers.includes(`${t.integration}.${t.key}`)
+        );
+        console.log('✅ Allowed Triggers:', allowedTriggers);
+        setAvailableTriggers(filteredTriggers);
+      } catch (err) {
+        console.error('❌ Error loading portal or plan:', err);
+      }
+    };
+
+    fetchOrg();
   }, []);
 
   useEffect(() => {
@@ -155,10 +185,13 @@ function WorkflowBuilder() {
           >
             <option value="">Select Action</option>
             {Object.entries(availableActions).flatMap(([integration, meta]) =>
-              meta.actions.map((action, idx) => (
-                <option key={`${integration}-${idx}`} value={`${integration}.${action.key}`}>
-                  {integration} - {action.label}
-                </option>
+              meta.actions.map((action) => (
+                <option
+  key={`${integration}.${action.key}`}
+  value={`${integration}.${action.key}`}
+>
+  {integration} - {action.label || action.key}
+</option>
               ))
             )}
           </select>

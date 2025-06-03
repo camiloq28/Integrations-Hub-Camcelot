@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -37,11 +38,9 @@ function UserManagement() {
   }, [navigate, token]);
 
   const fetchUsers = () => {
-    fetch('/api/users', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setUsers(data.users || []))
+    const axiosAuth = axiosWithAuth();
+    axiosAuth.get('/api/users')
+      .then(res => setUsers(res.data.users || []))
       .catch(err => {
         console.error(err);
         toast.error('Failed to fetch users.');
@@ -49,11 +48,9 @@ function UserManagement() {
   };
 
   const fetchOrganizations = () => {
-    fetch('/api/admin/orgs', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setOrgs(data.orgs || []))
+    const axiosAuth = axiosWithAuth();
+    axiosAuth.get('/api/admin/orgs')
+      .then(res => setOrgs(res.data.orgs || []))
       .catch(err => {
         console.error(err);
         toast.error('Failed to fetch organizations.');
@@ -61,11 +58,9 @@ function UserManagement() {
   };
 
   const fetchPlans = () => {
-    fetch('/api/plan/plans', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => setPlans(data.plans || []))
+    const axiosAuth = axiosWithAuth();
+    axiosAuth.get('/api/plan/plans')
+      .then(res => setPlans(res.data.plans || []))
       .catch(err => {
         console.error(err);
         toast.error('Failed to fetch plans');
@@ -79,16 +74,10 @@ function UserManagement() {
     }
 
     try {
-      const res = await fetch(`/api/admin/orgs/${orgId}/plan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ plan: newPlanId })
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.post(`/api/admin/orgs/${orgId}/plan`, { plan: newPlanId });
+      const data = res.data;
+      if (res.status >= 200 && res.status < 300) {
         toast.success('Plan updated');
         fetchOrganizations();
       } else {
@@ -103,15 +92,9 @@ function UserManagement() {
   const toggleStatus = async (email, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
     try {
-      const res = await fetch(`/api/users/${email}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      const data = await res.json();
+      const axiosAuth = axiosWithAuth();
+    const res = await axiosAuth.put(`/api/users/${email}/status`, { status: newStatus });
+    const data = res.data;
       if (res.ok) {
         toast.success('Status updated');
         fetchUsers();
@@ -132,15 +115,9 @@ function UserManagement() {
     }
 
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(newUser)
-      });
-      const data = await res.json();
+      const axiosAuth = axiosWithAuth();
+    const res = await axiosAuth.post('/api/users', newUser);
+    const data = res.data;
 
       if (res.ok) {
         toast.success('User created successfully');
@@ -164,16 +141,9 @@ function UserManagement() {
     if (!editingUser) return;
 
     try {
-      const res = await fetch(`/api/users/${editingUser.email}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(editFields)
-      });
-
-      const data = await res.json();
+      const axiosAuth = axiosWithAuth();
+    const res = await axiosAuth.put(`/api/users/${editingUser.email}`, editFields);
+    const data = res.data;
       if (res.ok) {
         toast.success('User updated');
         setEditingUser(null);
@@ -192,11 +162,9 @@ function UserManagement() {
     if (!window.confirm(`Are you sure you want to delete ${email}?`)) return;
 
     try {
-      const res = await fetch(`/api/users/${email}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const axiosAuth = axiosWithAuth();
+    const res = await axiosAuth.delete(`/api/users/${email}`);
+    const data = res.data;
       if (res.ok) {
         toast.success(data.message);
         fetchUsers();

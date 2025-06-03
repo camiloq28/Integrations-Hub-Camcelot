@@ -1,181 +1,84 @@
 // /client/src/pages/integrations/GreenhouseSetup.jsx
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axiosWithAuth from '../../utils/axiosWithAuth';
 
-const GreenhouseSetup = () => {
-  const [apiKey, setApiKey] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [testStatus, setTestStatus] = useState(null);
-  const [testing, setTesting] = useState(false);
-  const [testPassed, setTestPassed] = useState(false);
+function GreenhouseSetup() {
   const navigate = useNavigate();
+  const [token, setToken] = useState('');
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchToken = async () => {
+    const fetchCredentials = async () => {
       try {
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        const token = storedUser?.token;
-
-        if (!token) {
-          console.warn('⚠️ Missing token');
-          return;
-        }
-
-        const res = await fetch('/api/integrations/greenhouse/status', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        const text = await res.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (err) {
-          console.error('❌ Invalid JSON in greenhouse/status response:', text);
-          return;
-        }
-
-        if (res.ok && data?.credentials?.accessToken) {
-          setApiKey(data.credentials.accessToken);
-          setExpiresAt(data.credentials.expiresAt || '');
-          setTestPassed(true);
-        } else {
-          console.warn('⚠️ No existing Greenhouse credentials found');
-        }
+        const axiosAuth = axiosWithAuth();
+        const res = await axiosAuth.get('/api/integrations/greenhouse/credentials');
+        if (res.data.token) setToken(res.data.token);
       } catch (err) {
-        console.error('❌ Failed to fetch credentials:', err);
-      } finally {
-        setLoading(false);
+        console.error('Failed to fetch token:', err);
       }
     };
-
-    fetchToken();
+    fetchCredentials();
   }, []);
 
-  useEffect(() => {
-    setTestPassed(false);
-    setTestStatus(null);
-  }, [apiKey]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-
+  const testToken = async () => {
     try {
-      const storedUser = JSON.parse(localStorage.getItem('user'));
-      const token = storedUser?.token;
-
-      if (!token) throw new Error('Missing token');
-      if (!testPassed) throw new Error('API key must be tested and valid before saving');
-
-      const res = await fetch('/api/integrations/greenhouse/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ accessToken: apiKey, expiresAt })
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Server response was not valid JSON');
-      }
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to save integration credentials');
-      }
-
-      const updatedUser = { ...storedUser, setupComplete: true };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-
-      navigate('/client');
+      setLoading(true);
+      const axiosAuth = axiosWithAuth();
+      const res = await axiosAuth.post('/api/integrations/greenhouse/test');
+      setStatus(res.data.success ? 'valid' : 'invalid');
+      toast.success('Token is valid!');
     } catch (err) {
-      console.error('❌ Save error:', err);
-      setError(err.message);
+      console.error('Token test failed:', err);
+      setStatus('invalid');
+      toast.error('Token is invalid');
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const handleTest = async () => {
-    setTesting(true);
-    setTestStatus(null);
-    setError(null);
-
+  const saveToken = async () => {
     try {
-      const storedUser = JSON.parse(localStorage.getItem('user'));
-      const token = storedUser?.token;
-
-      if (!token) throw new Error('Missing token');
-
-      const res = await fetch('/api/integrations/greenhouse/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ accessToken: apiKey })
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Invalid response from test endpoint');
-      }
-
-      if (!res.ok) throw new Error(data.message || 'API test failed');
-
-      setTestStatus('✅ Token is valid');
-      setTestPassed(true);
+      if (!token) return toast.error('Token is required');
+      const axiosAuth = axiosWithAuth();
+      await axiosAuth.post('/api/integrations/greenhouse/config', { accessToken: token });
+      toast.success('Token saved successfully');
     } catch (err) {
-      console.error('❌ Test failed:', err);
-      setTestStatus(`❌ ${err.message}`);
-      setTestPassed(false);
-    } finally {
-      setTesting(false);
+      console.error('Failed to save token:', err);
+      toast.error('Error saving token');
     }
   };
-
-  if (loading) return <div>Loading Greenhouse credentials...</div>;
 
   return (
     <div style={{ maxWidth: '600px', margin: 'auto' }}>
       <h2>Greenhouse Integration Setup</h2>
-      <p>Enter and save your API credentials to complete integration setup.</p>
+      <p>Enter and test your Greenhouse Harvest API key below:</p>
 
-      <label>Access Token:</label>
       <input
         type="text"
-        value={apiKey}
-        onChange={(e) => setApiKey(e.target.value)}
         placeholder="Enter Greenhouse API Token"
-        style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+        style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
 
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={handleSave} disabled={!testPassed || saving}>
-          {saving ? 'Saving...' : 'Save and Continue'}
-        </button>
-        <button onClick={handleTest} disabled={testing || !apiKey}>
-          {testing ? 'Testing...' : 'Test API Key'}
-        </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+        <button onClick={testToken} disabled={loading}>Test Token</button>
+        <button onClick={saveToken} disabled={status !== 'valid'}>Save Token</button>
       </div>
 
-      {testStatus && <p style={{ marginTop: '10px', color: testStatus.startsWith('✅') ? 'green' : 'red' }}>{testStatus}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {status === 'valid' && <p style={{ color: 'green' }}>✅ Token is valid.</p>}
+      {status === 'invalid' && <p style={{ color: 'red' }}>❌ Token is invalid.</p>}
+
+      <button onClick={() => navigate('/client')}>Back to Dashboard</button>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
-};
+}
 
 export default GreenhouseSetup;

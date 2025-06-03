@@ -1,3 +1,5 @@
+// /server/routes/client.js
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
@@ -21,49 +23,64 @@ router.get('/portal-debug', (req, res) => {
 router.get('/portal', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
   try {
     const userId = req.user?._id;
-    const token = req.headers.authorization || '(none)';
-    console.log('🔐 Portal access - Token Header Received:', token);
-    console.log('🔒 req.headers:', req.headers);
-    console.log('🔍 Fetching portal for user:', userId);
+    console.log('🔍 Portal route hit for user ID:', userId);
 
     if (!userId) {
-      console.warn('❌ No user ID on request');
+      console.warn('❌ No user ID found on request');
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const user = await User.findById(userId);
     if (!user || !user.orgId) {
-      console.warn('⚠️ No user/org found for portal');
-      return res.status(404).json({ message: 'Organization not found' });
+      console.warn('⚠️ User or associated org ID not found:', userId);
+      return res.status(404).json({ message: 'User or organization not found' });
     }
 
-    const org = await Organization.findById(user.orgId).populate('plan');
+    const org = await Organization.findById(user.orgId);
     if (!org) {
       console.warn('⚠️ Organization not found by ID:', user.orgId);
       return res.status(404).json({ message: 'Organization not found' });
     }
 
+    const planName = org.plan || user.plan || 'Unassigned';
+
+    let plan = null;
+    try {
+      plan = await Plan.findById(planName);
+    } catch (e) {
+      console.warn('⚠️ planName is not an ObjectId, trying by name');
+    }
+    if (!plan) {
+      plan = await Plan.findOne({ name: planName });
+    }
+
+    if (!plan) {
+      console.error(`❌ Plan '${planName}' not found for organization ${org.name}`);
+      return res.status(404).json({ message: `Plan '${planName}' not found` });
+    }
+
+    org.enabledIntegrations = Array.isArray(plan.integrations) ? plan.integrations : [];
+    org.enabledFeatures = Array.isArray(plan.enabledFeatures) ? plan.enabledFeatures : [];
+    await org.save();
+
     const response = {
-      orgName: org.name || 'N/A',
+      orgName: org.name || 'Unnamed Org',
       orgId: org._id?.toString() || '',
       orgCode: org.orgId || '',
-      planName: org.plan?.name || 'Unassigned',
-      allowedIntegrations: Array.isArray(org.plan?.integrations) ? org.plan.integrations : [],
-      enabledFeatures: Array.isArray(org.enabledFeatures) ? org.enabledFeatures : []
+      planName: plan.name,
+      allowedIntegrations: [...org.enabledIntegrations],
+      allowedActions: Array.isArray(plan.allowedActions) ? plan.allowedActions : [],
+      allowedTriggers: Array.isArray(plan.allowedTriggers) ? plan.allowedTriggers : [],
+      enabledFeatures: [...org.enabledFeatures]
     };
 
-    const responseText = JSON.stringify(response, null, 2);
-    console.log('📦 Portal Response JSON:', responseText);
-
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(responseText); // send() to avoid double-serialization issues
+    console.log('📦 Returning Portal JSON:\n', JSON.stringify(response, null, 2));
+    res.status(200).json(response);
   } catch (err) {
-    console.error('❌ Error fetching client portal data:', err);
+    console.error('❌ Error in /portal route:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
 
 // ✅ Create workflow
 router.post('/workflows', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
@@ -176,7 +193,6 @@ async function runStep(type, config) {
       throw new Error(`Unsupported step type: ${type}`);
   }
 }
-
 
 // GET enabled integrations for client organization
 router.get('/integrations', protect, hasRole('client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
