@@ -41,7 +41,7 @@ function WorkflowBuilder() {
         const filtered = {};
         for (const [integration, meta] of Object.entries(grouped)) {
           const filteredActions = meta.actions.filter(action =>
-            allowedActionSet.has(`${action.integration}.${action.key}`)
+            allowedActionSet.has(action.key)
           );
           if (filteredActions.length > 0) {
             filtered[integration] = { actions: filteredActions };
@@ -62,7 +62,7 @@ function WorkflowBuilder() {
 
         const triggersRes = await axiosAuth.get('/api/integrations/triggers');
         const filteredTriggers = triggersRes.data.triggers.filter(t =>
-          allowedTriggers.includes(`${t.integration}.${t.key}`)
+          allowedTriggers.includes(t.key)
         );
         console.log('✅ Allowed Triggers:', allowedTriggers);
         setAvailableTriggers(filteredTriggers);
