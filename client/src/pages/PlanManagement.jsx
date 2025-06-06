@@ -37,31 +37,44 @@ function PlanManagement() {
   useEffect(() => {
     if (!editingPlan || availableTriggers.length === 0 || availableActions.length === 0) return;
 
+    console.log('Setting selected triggers/actions for editing plan:', editingPlan);
+    console.log('Available triggers:', availableTriggers);
+    console.log('Available actions:', availableActions);
+
     const matchedTriggers = [];
     const matchedActions = [];
 
-    for (const integration of editingPlan.integrations) {
-      const triggerMeta = availableTriggers.filter(t => t.integration === integration);
-      const actionMeta = availableActions.filter(a => a.integration === integration);
+    // Match triggers
+    availableTriggers.forEach(t => {
+      const triggerKey = `${t.integration}.${t.key}`;
+      if ((editingPlan.allowedTriggers || []).includes(triggerKey)) {
+        matchedTriggers.push(t);
+      }
+    });
 
-      triggerMeta.forEach(t => {
-        if ((editingPlan.allowedTriggers || []).includes(`${integration}.${t.key}`)) matchedTriggers.push(t);
-      });
+    // Match actions  
+    availableActions.forEach(a => {
+      const actionKey = `${a.integration}.${a.key}`;
+      if ((editingPlan.allowedActions || []).includes(actionKey)) {
+        matchedActions.push(a);
+      }
+    });
 
-      actionMeta.forEach(a => {
-        if ((editingPlan.allowedActions || []).includes(`${integration}.${a.key}`)) matchedActions.push(a);
-      });
-    }
+    console.log('Matched triggers:', matchedTriggers);
+    console.log('Matched actions:', matchedActions);
 
     setSelectedTriggers(matchedTriggers);
     setSelectedActions(matchedActions);
   }, [availableTriggers, availableActions, editingPlan]);
 
   const fetchTriggerAndActions = async () => {
+    console.log('Fetching triggers/actions for integrations:', selectedIntegrations);
     try {
       const axiosAuth = axiosWithAuth();
       const res = await axiosAuth.get('/api/integrations/meta');
       const data = res.data;
+
+      console.log('Meta data received:', data);
 
       const filteredTriggers = [];
       const filteredActions = [];
@@ -69,6 +82,8 @@ function PlanManagement() {
       for (const integration of selectedIntegrations) {
         const triggerGroup = data.triggersByIntegration[integration] || { triggers: [] };
         const actionGroup = data.actionsByIntegration[integration] || { actions: [] };
+
+        console.log(`Processing ${integration}:`, { triggerGroup, actionGroup });
 
         if (Array.isArray(triggerGroup.triggers)) {
           triggerGroup.triggers.forEach(trigger => filteredTriggers.push({ ...trigger, integration, id: `${integration}.${trigger.key}` }));
@@ -78,6 +93,9 @@ function PlanManagement() {
           actionGroup.actions.forEach(action => filteredActions.push({ ...action, integration, id: `${integration}.${action.key}` }));
         }
       }
+
+      console.log('Filtered triggers:', filteredTriggers);
+      console.log('Filtered actions:', filteredActions);
 
       setAvailableTriggers(filteredTriggers);
       setAvailableActions(filteredActions);
@@ -193,11 +211,16 @@ function PlanManagement() {
   };
 
   const startEditPlan = (plan) => {
+    console.log('Starting to edit plan:', plan);
     setEditingPlan(plan);
     setNewPlanName(plan.name);
     setSelectedIntegrations(plan.integrations || []);
+    // Clear selected triggers/actions initially - they'll be set after fetch
     setSelectedTriggers([]);
     setSelectedActions([]);
+    // Clear available triggers/actions to force refetch
+    setAvailableTriggers([]);
+    setAvailableActions([]);
     setShowPlanForm(true);
   };
 
