@@ -1,9 +1,10 @@
-const greenhouse = require('./greenhouse');
-const bamboohr = require('./bamboohr');
-const gmail = require('./gmail');
-
 module.exports = {
-  greenhouse,
-  bamboohr,
-  gmail
+  greenhouse: require('./greenhouse'),
+  gmail: require('./gmail'),
+  bamboohr: require('./bamboohr'),
+  // Add aliases for different naming conventions
+  'Greenhouse': require('./greenhouse'),
+  'Gmail': require('./gmail'),
+  'Bamboo HR': require('./bamboohr'),
+  'BambooHR': require('./bamboohr')
 };
