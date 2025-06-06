@@ -83,18 +83,6 @@ function EnvironmentVariables() {
     }
   };
 
-  const autoPopulateVars = async () => {
-    try {
-      const axiosAuth = axiosWithAuth();
-      const res = await axiosAuth.post('/api/admin/env-vars/auto-populate');
-      await fetchEnvVars();
-      toast.success(`Auto-populated: ${res.data.updated.join(', ')}`);
-    } catch (err) {
-      console.error('Error auto-populating environment variables:', err);
-      toast.error('Failed to auto-populate environment variables');
-    }
-  };
-
   const getAllDefinedVars = () => {
     const allDefined = [];
     Object.values(envVarGroups).forEach(group => {
@@ -112,38 +100,18 @@ function EnvironmentVariables() {
       </button>
 
       <h2>Environment Variables Management</h2>
-      <p style={{ color: '#888', marginBottom: '20px' }}>
+      <p style={{ color: '#888', marginBottom: '30px' }}>
         Manage environment variables for integrations and system configuration.
       </p>
-      
-      <div style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', marginBottom: '30px', border: '1px solid #444' }}>
-        <h4 style={{ color: '#4CAF50', margin: '0 0 10px 0' }}>Auto-Population Available</h4>
-        <p style={{ color: '#ccc', fontSize: '14px', margin: '0 0 10px 0' }}>
-          The following values can be automatically populated:
-        </p>
-        <ul style={{ color: '#888', fontSize: '14px', margin: '0', paddingLeft: '20px' }}>
-          <li><strong>BASE_URL & CLIENT_URL:</strong> Your current Replit URL</li>
-          <li><strong>NODE_ENV:</strong> Set to development</li>
-          <li><strong>MONGODB_URI:</strong> Uses your existing MONGO_URI if available</li>
-        </ul>
-      </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-        {!showAddForm && (
-          <button 
-            onClick={() => setShowAddForm(true)}
-            style={{ background: '#4CAF50', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}
-          >
-            Add Custom Variable
-          </button>
-        )}
+      {!showAddForm && (
         <button 
-          onClick={autoPopulateVars}
-          style={{ background: '#2196F3', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}
+          onClick={() => setShowAddForm(true)}
+          style={{ marginBottom: '20px', background: '#4CAF50', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}
         >
-          Auto-Populate Known Values
+          Add Custom Variable
         </button>
-      </div>
+      )}
 
       {showAddForm && (
         <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>

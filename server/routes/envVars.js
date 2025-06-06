@@ -23,27 +23,11 @@ router.get('/', protect, adminOnly, async (req, res) => {
       'NODE_ENV', 'LOG_LEVEL', 'SENTRY_DSN'
     ];
 
-    // Auto-populate known values
-    const knownValues = {
-      'MONGODB_URI': process.env.MONGO_URI, // Your app uses MONGO_URI
-      'BASE_URL': 'https://4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev',
-      'CLIENT_URL': 'https://4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev',
-      'NODE_ENV': 'development'
-    };
-
     requiredVars.forEach(key => {
-      const envValue = process.env[key] || knownValues[key];
-      if (envValue) {
+      if (process.env[key]) {
         envVars[key] = { 
           value: '***HIDDEN***', // Don't expose actual values
           isSet: true,
-          description: getVarDescription(key),
-          actualValue: envValue // Only for auto-population
-        };
-      } else {
-        envVars[key] = { 
-          value: '',
-          isSet: false,
           description: getVarDescription(key)
         };
       }
@@ -118,36 +102,6 @@ router.post('/', protect, adminOnly, async (req, res) => {
     res.json({ message: `Environment variable ${key} saved successfully` });
   } catch (err) {
     console.error('Error saving environment variable:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Auto-populate missing environment variables
-router.post('/auto-populate', protect, adminOnly, async (req, res) => {
-  try {
-    const updates = [];
-    
-    // Auto-populate known values that are missing
-    const autoValues = {
-      'BASE_URL': 'https://4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev',
-      'CLIENT_URL': 'https://4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev',
-      'NODE_ENV': 'development'
-    };
-
-    for (const [key, value] of Object.entries(autoValues)) {
-      if (!process.env[key]) {
-        // Set in process.env for immediate use
-        process.env[key] = value;
-        updates.push(key);
-      }
-    }
-
-    res.json({ 
-      message: `Auto-populated ${updates.length} environment variables`,
-      updated: updates
-    });
-  } catch (err) {
-    console.error('Error auto-populating environment variables:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
