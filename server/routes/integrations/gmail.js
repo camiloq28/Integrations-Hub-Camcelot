@@ -9,16 +9,24 @@ const router = express.Router();
 
 // Gmail OAuth configuration
 const getGmailOAuth2Client = () => {
+  const redirectUri = `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`;
   return new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
     process.env.GMAIL_CLIENT_SECRET,
-    process.env.GMAIL_REDIRECT_URI || `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`
+    redirectUri
   );
 };
 
 // Generate OAuth URL
 router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req, res) => {
   try {
+    // Validate environment variables
+    if (!process.env.GMAIL_CLIENT_ID || !process.env.GMAIL_CLIENT_SECRET || !process.env.BASE_URL) {
+      return res.status(500).json({ 
+        message: 'Gmail OAuth not configured. Please set GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, and BASE_URL environment variables.' 
+      });
+    }
+
     const oauth2Client = getGmailOAuth2Client();
     
     const scopes = [

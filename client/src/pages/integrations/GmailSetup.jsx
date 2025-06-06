@@ -34,7 +34,11 @@ function GmailSetup() {
       window.location.href = res.data.authUrl;
     } catch (err) {
       console.error('Failed to initiate OAuth:', err);
-      toast.error('Error initiating Gmail connection');
+      if (err.response?.status === 500) {
+        toast.error('Gmail OAuth not configured. Please check environment variables.');
+      } else {
+        toast.error('Error initiating Gmail connection');
+      }
       setLoading(false);
     }
   };
