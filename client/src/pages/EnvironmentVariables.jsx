@@ -11,6 +11,8 @@ function EnvironmentVariables() {
   const [newVar, setNewVar] = useState({ key: '', value: '', description: '' });
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedVar, setExpandedVar] = useState(null);
+  const [editingVar, setEditingVar] = useState({ key: '', value: '', description: '' });
 
   // Environment variables grouped by platform
   const envVarGroups = {
@@ -89,6 +91,43 @@ function EnvironmentVariables() {
       group.forEach(varDef => allDefined.push(varDef.key));
     });
     return allDefined;
+  };
+
+  const toggleExpanded = (key, description = '') => {
+    if (expandedVar === key) {
+      setExpandedVar(null);
+      setEditingVar({ key: '', value: '', description: '' });
+    } else {
+      setExpandedVar(key);
+      setEditingVar({ 
+        key, 
+        value: envVars[key]?.value || '', 
+        description: description || envVars[key]?.description || '' 
+      });
+    }
+  };
+
+  const saveInlineVar = async () => {
+    if (!editingVar.key || !editingVar.value) {
+      toast.error('Key and value are required');
+      return;
+    }
+    
+    try {
+      const axiosAuth = axiosWithAuth();
+      await axiosAuth.post('/api/admin/env-vars', { 
+        key: editingVar.key, 
+        value: editingVar.value, 
+        description: editingVar.description 
+      });
+      await fetchEnvVars();
+      toast.success(`${editingVar.key} saved successfully`);
+      setExpandedVar(null);
+      setEditingVar({ key: '', value: '', description: '' });
+    } catch (err) {
+      console.error('Error saving environment variable:', err);
+      toast.error('Failed to save environment variable');
+    }
   };
 
   if (loading) return <div>Loading environment variables...</div>;
@@ -177,9 +216,10 @@ function EnvironmentVariables() {
           <div style={{ display: 'grid', gap: '15px' }}>
             {variables.map(({ key, description }) => {
               const isSet = envVars[key];
+              const isExpanded = expandedVar === key;
               return (
-                <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', border: isExpanded ? '2px solid #4CAF50' : '1px solid #333' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleExpanded(key, description)}>
                     <div>
                       <strong>{key}</strong>
                       <span style={{ marginLeft: '10px', color: isSet ? 'green' : 'red' }}>
@@ -187,19 +227,16 @@ function EnvironmentVariables() {
                       </span>
                       <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>{description}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        onClick={() => {
-                          setNewVar({ key, value: '', description });
-                          setShowAddForm(true);
-                        }}
-                        style={{ background: '#2196F3', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
-                      >
-                        {isSet ? 'Update' : 'Set'}
-                      </button>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ color: '#888', fontSize: '12px' }}>
+                        {isExpanded ? '▼ Click to collapse' : '▶ Click to edit'}
+                      </span>
                       {isSet && !['MONGODB_URI', 'JWT_SECRET'].includes(key) && (
                         <button 
-                          onClick={() => deleteEnvVar(key)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteEnvVar(key);
+                          }}
                           style={{ background: '#f44336', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
                         >
                           Delete
@@ -207,6 +244,62 @@ function EnvironmentVariables() {
                       )}
                     </div>
                   </div>
+                  
+                  {isExpanded && (
+                    <div style={{ marginTop: '15px', padding: '15px', background: '#2a2a2a', borderRadius: '6px' }}>
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Key:</label>
+                        <input
+                          type="text"
+                          value={editingVar.key}
+                          readOnly
+                          style={{ width: '100%', padding: '8px', background: '#444', border: '1px solid #555', color: '#ccc', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Value:</label>
+                        <input
+                          type="password"
+                          value={editingVar.value}
+                          onChange={(e) => setEditingVar({ ...editingVar, value: e.target.value })}
+                          placeholder="Enter variable value"
+                          style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Description:</label>
+                        <input
+                          type="text"
+                          value={editingVar.description}
+                          onChange={(e) => setEditingVar({ ...editingVar, description: e.target.value })}
+                          placeholder="Description of this variable"
+                          style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                          onClick={saveInlineVar}
+                          disabled={!editingVar.value}
+                          style={{ 
+                            background: editingVar.value ? '#4CAF50' : '#666', 
+                            color: 'white', 
+                            padding: '8px 16px', 
+                            border: 'none', 
+                            borderRadius: '4px',
+                            cursor: editingVar.value ? 'pointer' : 'not-allowed'
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={() => toggleExpanded(key)}
+                          style={{ background: '#666', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -223,25 +316,92 @@ function EnvironmentVariables() {
         Custom Variables
       </h3>
       <div style={{ display: 'grid', gap: '15px' }}>
-        {Object.entries(envVars).filter(([key]) => !getAllDefinedVars().includes(key)).map(([key, data]) => (
-          <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong>{key}</strong>
-                <span style={{ marginLeft: '10px', color: 'green' }}>✅ Set</span>
-                {data.description && (
-                  <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>{data.description}</p>
-                )}
+        {Object.entries(envVars).filter(([key]) => !getAllDefinedVars().includes(key)).map(([key, data]) => {
+          const isExpanded = expandedVar === key;
+          return (
+            <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', border: isExpanded ? '2px solid #FF9800' : '1px solid #333' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleExpanded(key, data.description)}>
+                <div>
+                  <strong>{key}</strong>
+                  <span style={{ marginLeft: '10px', color: 'green' }}>✅ Set</span>
+                  {data.description && (
+                    <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>{data.description}</p>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <span style={{ color: '#888', fontSize: '12px' }}>
+                    {isExpanded ? '▼ Click to collapse' : '▶ Click to edit'}
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteEnvVar(key);
+                    }}
+                    style={{ background: '#f44336', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={() => deleteEnvVar(key)}
-                style={{ background: '#f44336', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
-              >
-                Delete
-              </button>
+              
+              {isExpanded && (
+                <div style={{ marginTop: '15px', padding: '15px', background: '#2a2a2a', borderRadius: '6px' }}>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Key:</label>
+                    <input
+                      type="text"
+                      value={editingVar.key}
+                      readOnly
+                      style={{ width: '100%', padding: '8px', background: '#444', border: '1px solid #555', color: '#ccc', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Value:</label>
+                    <input
+                      type="password"
+                      value={editingVar.value}
+                      onChange={(e) => setEditingVar({ ...editingVar, value: e.target.value })}
+                      placeholder="Enter variable value"
+                      style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Description:</label>
+                    <input
+                      type="text"
+                      value={editingVar.description}
+                      onChange={(e) => setEditingVar({ ...editingVar, description: e.target.value })}
+                      placeholder="Description of this variable"
+                      style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                      onClick={saveInlineVar}
+                      disabled={!editingVar.value}
+                      style={{ 
+                        background: editingVar.value ? '#FF9800' : '#666', 
+                        color: 'white', 
+                        padding: '8px 16px', 
+                        border: 'none', 
+                        borderRadius: '4px',
+                        cursor: editingVar.value ? 'pointer' : 'not-allowed'
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button 
+                      onClick={() => toggleExpanded(key)}
+                      style={{ background: '#666', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {Object.entries(envVars).filter(([key]) => !getAllDefinedVars().includes(key)).length === 0 && (
           <p style={{ color: '#888', fontStyle: 'italic' }}>No custom variables defined</p>
         )}
