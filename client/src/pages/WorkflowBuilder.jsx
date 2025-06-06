@@ -98,10 +98,17 @@ function WorkflowBuilder() {
 
   const updateStep = (index, field, value) => {
     const newSteps = [...steps];
-    newSteps[index].config = newSteps[index].config || {};
     if (field === 'type') {
-      newSteps[index] = { ...newSteps[index], type: value, config: {} };
+      const [integration, action] = value.split('.');
+      newSteps[index] = {
+        type: value,
+        integration,
+        action,
+        config: {},
+        order: index
+      };
     } else {
+      if (!newSteps[index].config) newSteps[index].config = {};
       newSteps[index].config[field] = value;
     }
     setSteps(newSteps);

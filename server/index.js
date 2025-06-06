@@ -11,6 +11,7 @@ const workflowRoutes = require('./routes/workflows');
 const integrationRoutes = require('./routes/integrations');
 const metaRoutes = require('./routes/integrations/meta');
 const greenhouseRoutes = require('./routes/integrations/greenhouse');
+const webhookRoutes = require('./routes/webhooks');
 
 
 
@@ -31,6 +32,7 @@ app.use('/api', usersRoute);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/integrations/meta', metaRoutes);
 app.use('/api/integrations/greenhouse', greenhouseRoutes);
+app.use('/api/webhooks', webhookRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
