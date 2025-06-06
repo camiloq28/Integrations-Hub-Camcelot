@@ -18,6 +18,7 @@ function AdminDashboard() {
         <button onClick={() => navigate('/profile')}>My Profile</button>
         <button onClick={() => navigate('/users')}>User Management</button>
         <button onClick={() => navigate('/plans')}>Manage Plans</button>
+        <button onClick={() => navigate('/admin/env-vars')}>Environment Variables</button>
         <button onClick={logout}>Logout</button>
       </div>
 

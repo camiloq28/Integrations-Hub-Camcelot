@@ -4,6 +4,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ClientPortal from './pages/ClientPortal';
 import UserProfile from './pages/UserProfile';
 import PlanManagement from './pages/PlanManagement';
+import EnvironmentVariables from './pages/EnvironmentVariables';
 import UserManagement from './pages/UserManagement';
 import WorkflowBuilder from './pages/WorkflowBuilder';
 import GreenhouseSetup from './pages/integrations/GreenhouseSetup';
@@ -33,6 +34,7 @@ function App() {
         <Route path="/users" element={<UserManagement />} />
         <Route path="/create-workflow" element={<WorkflowBuilder />} />
         <Route path="/plans" element={<PlanManagement />} />
+        <Route path="/admin/env-vars" element={<EnvironmentVariables />} />
         <Route path="/client/integrations/greenhouse/dashboard" element={<GreenhouseDashboard />} />
         <Route path="/org/:orgId/users" element={<OrganizationUserManagement />} />
 

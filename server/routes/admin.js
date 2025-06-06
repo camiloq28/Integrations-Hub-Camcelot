@@ -10,6 +10,9 @@ const Plan = require('../models/Plan');
 
 const router = express.Router();
 
+// Environment variables management
+router.use('/env-vars', require('./envVars'));
+
 // 📊 Get all organizations with user count, excluding "Camcelot"
 router.get('/orgs', protect, adminOnly, async (req, res) => {
   try {
