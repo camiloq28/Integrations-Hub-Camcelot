@@ -12,15 +12,31 @@ function EnvironmentVariables() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Predefined environment variables with descriptions
-  const predefinedVars = [
-    { key: 'GMAIL_CLIENT_ID', description: 'Google OAuth Client ID for Gmail integration' },
-    { key: 'GMAIL_CLIENT_SECRET', description: 'Google OAuth Client Secret for Gmail integration' },
-    { key: 'BASE_URL', description: 'Base URL of the application' },
-    { key: 'CLIENT_URL', description: 'Frontend URL of the application' },
-    { key: 'MONGODB_URI', description: 'MongoDB connection string' },
-    { key: 'JWT_SECRET', description: 'JWT signing secret' }
-  ];
+  // Environment variables grouped by platform
+  const envVarGroups = {
+    'System Configuration': [
+      { key: 'MONGODB_URI', description: 'MongoDB connection string' },
+      { key: 'JWT_SECRET', description: 'JWT signing secret' },
+      { key: 'BASE_URL', description: 'Base URL of the application' },
+      { key: 'CLIENT_URL', description: 'Frontend URL of the application' }
+    ],
+    'Email & Communication': [
+      { key: 'GMAIL_CLIENT_ID', description: 'Google OAuth Client ID for Gmail integration' },
+      { key: 'GMAIL_CLIENT_SECRET', description: 'Google OAuth Client Secret for Gmail integration' },
+      { key: 'SLACK_CLIENT_ID', description: 'Slack OAuth Client ID for Slack integration' },
+      { key: 'SLACK_CLIENT_SECRET', description: 'Slack OAuth Client Secret for Slack integration' }
+    ],
+    'HR & Recruiting': [
+      { key: 'GREENHOUSE_API_KEY', description: 'Greenhouse API key for recruiting integration' },
+      { key: 'BAMBOOHR_API_KEY', description: 'BambooHR API key for HR integration' },
+      { key: 'BAMBOOHR_SUBDOMAIN', description: 'BambooHR company subdomain' }
+    ],
+    'Development & Monitoring': [
+      { key: 'NODE_ENV', description: 'Node.js environment (development/production)' },
+      { key: 'LOG_LEVEL', description: 'Application logging level' },
+      { key: 'SENTRY_DSN', description: 'Sentry error tracking DSN' }
+    ]
+  };
 
   useEffect(() => {
     fetchEnvVars();
@@ -67,6 +83,14 @@ function EnvironmentVariables() {
     }
   };
 
+  const getAllDefinedVars = () => {
+    const allDefined = [];
+    Object.values(envVarGroups).forEach(group => {
+      group.forEach(varDef => allDefined.push(varDef.key));
+    });
+    return allDefined;
+  };
+
   if (loading) return <div>Loading environment variables...</div>;
 
   return (
@@ -85,20 +109,20 @@ function EnvironmentVariables() {
           onClick={() => setShowAddForm(true)}
           style={{ marginBottom: '20px', background: '#4CAF50', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}
         >
-          Add New Variable
+          Add Custom Variable
         </button>
       )}
 
       {showAddForm && (
         <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
-          <h3>Add New Environment Variable</h3>
+          <h3>Add Custom Environment Variable</h3>
           <div style={{ marginBottom: '15px' }}>
             <label>Key:</label>
             <input
               type="text"
               value={newVar.key}
               onChange={(e) => setNewVar({ ...newVar, key: e.target.value })}
-              placeholder="VARIABLE_NAME"
+              placeholder="CUSTOM_VARIABLE_NAME"
               style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#333', border: '1px solid #555', color: 'white' }}
             />
           </div>
@@ -140,48 +164,66 @@ function EnvironmentVariables() {
         </div>
       )}
 
-      <h3>Current Environment Variables</h3>
-      <div style={{ display: 'grid', gap: '15px' }}>
-        {predefinedVars.map(({ key, description }) => {
-          const isSet = envVars[key];
-          return (
-            <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong>{key}</strong>
-                  <span style={{ marginLeft: '10px', color: isSet ? 'green' : 'red' }}>
-                    {isSet ? '✅ Set' : '❌ Not Set'}
-                  </span>
-                  <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>{description}</p>
+      {Object.entries(envVarGroups).map(([groupName, variables]) => (
+        <div key={groupName} style={{ marginBottom: '40px' }}>
+          <h3 style={{ 
+            color: '#4CAF50', 
+            borderBottom: '2px solid #4CAF50', 
+            paddingBottom: '5px',
+            marginBottom: '20px'
+          }}>
+            {groupName}
+          </h3>
+          <div style={{ display: 'grid', gap: '15px' }}>
+            {variables.map(({ key, description }) => {
+              const isSet = envVars[key];
+              return (
+                <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong>{key}</strong>
+                      <span style={{ marginLeft: '10px', color: isSet ? 'green' : 'red' }}>
+                        {isSet ? '✅ Set' : '❌ Not Set'}
+                      </span>
+                      <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>{description}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => {
+                          setNewVar({ key, value: '', description });
+                          setShowAddForm(true);
+                        }}
+                        style={{ background: '#2196F3', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+                      >
+                        {isSet ? 'Update' : 'Set'}
+                      </button>
+                      {isSet && !['MONGODB_URI', 'JWT_SECRET'].includes(key) && (
+                        <button 
+                          onClick={() => deleteEnvVar(key)}
+                          style={{ background: '#f44336', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    onClick={() => {
-                      setNewVar({ key, value: '', description });
-                      setShowAddForm(true);
-                    }}
-                    style={{ background: '#2196F3', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
-                  >
-                    {isSet ? 'Update' : 'Set'}
-                  </button>
-                  {isSet && (
-                    <button 
-                      onClick={() => deleteEnvVar(key)}
-                      style={{ background: '#f44336', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', fontSize: '12px' }}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
-      <h3 style={{ marginTop: '30px' }}>Custom Variables</h3>
+      <h3 style={{ 
+        color: '#FF9800', 
+        borderBottom: '2px solid #FF9800', 
+        paddingBottom: '5px',
+        marginBottom: '20px'
+      }}>
+        Custom Variables
+      </h3>
       <div style={{ display: 'grid', gap: '15px' }}>
-        {Object.entries(envVars).filter(([key]) => !predefinedVars.some(p => p.key === key)).map(([key, data]) => (
+        {Object.entries(envVars).filter(([key]) => !getAllDefinedVars().includes(key)).map(([key, data]) => (
           <div key={key} style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -200,6 +242,9 @@ function EnvironmentVariables() {
             </div>
           </div>
         ))}
+        {Object.entries(envVars).filter(([key]) => !getAllDefinedVars().includes(key)).length === 0 && (
+          <p style={{ color: '#888', fontStyle: 'italic' }}>No custom variables defined</p>
+        )}
       </div>
 
       <ToastContainer position="top-right" autoClose={3000} />

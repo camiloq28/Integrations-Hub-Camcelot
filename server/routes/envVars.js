@@ -16,12 +16,11 @@ router.get('/', protect, adminOnly, async (req, res) => {
     
     // Read from process.env (Replit secrets)
     const requiredVars = [
-      'GMAIL_CLIENT_ID',
-      'GMAIL_CLIENT_SECRET', 
-      'BASE_URL',
-      'CLIENT_URL',
-      'MONGODB_URI',
-      'JWT_SECRET'
+      'MONGODB_URI', 'JWT_SECRET', 'BASE_URL', 'CLIENT_URL',
+      'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET',
+      'SLACK_CLIENT_ID', 'SLACK_CLIENT_SECRET',
+      'GREENHOUSE_API_KEY', 'BAMBOOHR_API_KEY', 'BAMBOOHR_SUBDOMAIN',
+      'NODE_ENV', 'LOG_LEVEL', 'SENTRY_DSN'
     ];
 
     requiredVars.forEach(key => {
@@ -68,7 +67,12 @@ router.post('/', protect, adminOnly, async (req, res) => {
     }
 
     // For critical system vars, recommend using Replit Secrets
-    const systemVars = ['GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 'BASE_URL', 'CLIENT_URL'];
+    const systemVars = [
+      'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 
+      'SLACK_CLIENT_ID', 'SLACK_CLIENT_SECRET',
+      'GREENHOUSE_API_KEY', 'BAMBOOHR_API_KEY',
+      'BASE_URL', 'CLIENT_URL', 'SENTRY_DSN'
+    ];
     if (systemVars.includes(key)) {
       return res.status(400).json({ 
         message: `${key} should be set using Replit Secrets tool for security. Go to Tools > Secrets to set this variable.`
@@ -166,12 +170,24 @@ function parseEnvFile(content) {
 
 function getVarDescription(key) {
   const descriptions = {
-    'GMAIL_CLIENT_ID': 'Google OAuth Client ID for Gmail integration',
-    'GMAIL_CLIENT_SECRET': 'Google OAuth Client Secret for Gmail integration',
+    // System Configuration
+    'MONGODB_URI': 'MongoDB connection string',
+    'JWT_SECRET': 'JWT signing secret',
     'BASE_URL': 'Base URL of the application',
     'CLIENT_URL': 'Frontend URL of the application',
-    'MONGODB_URI': 'MongoDB connection string',
-    'JWT_SECRET': 'JWT signing secret'
+    // Email & Communication
+    'GMAIL_CLIENT_ID': 'Google OAuth Client ID for Gmail integration',
+    'GMAIL_CLIENT_SECRET': 'Google OAuth Client Secret for Gmail integration',
+    'SLACK_CLIENT_ID': 'Slack OAuth Client ID for Slack integration',
+    'SLACK_CLIENT_SECRET': 'Slack OAuth Client Secret for Slack integration',
+    // HR & Recruiting
+    'GREENHOUSE_API_KEY': 'Greenhouse API key for recruiting integration',
+    'BAMBOOHR_API_KEY': 'BambooHR API key for HR integration',
+    'BAMBOOHR_SUBDOMAIN': 'BambooHR company subdomain',
+    // Development & Monitoring
+    'NODE_ENV': 'Node.js environment (development/production)',
+    'LOG_LEVEL': 'Application logging level',
+    'SENTRY_DSN': 'Sentry error tracking DSN'
   };
   return descriptions[key] || '';
 }
