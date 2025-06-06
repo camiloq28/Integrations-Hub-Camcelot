@@ -1,0 +1,66 @@
+🧭 Plan Management Specification (for Replit Assistant)
+
+📌 Goal
+Create a robust Plan Management UI where an admin can:
+1. Create/Edit/Delete Plans
+2. For each plan:
+   - Select allowed integrations
+   - Choose specific triggers and actions from those integrations
+3. Store this configuration in a structured way that allows it to:
+   - Power the client’s workflow builder
+   - Respect plan and connection limitations
+
+📁 Integration Metadata
+Source: GET /api/integrations/meta
+
+Shape:
+{
+  "actionsByIntegration": {
+    "greenhouse": {
+      "actions": [
+        { "key": "create_candidate", "label": "Create Candidate", "fields": [...] }
+      ]
+    },
+    ...
+  },
+  "triggersByIntegration": {
+    "greenhouse": {
+      "triggers": [
+        { "key": "new_candidate", "label": "New Candidate Added" }
+      ]
+    },
+    ...
+  }
+}
+
+🛠 How Plan Management Works
+
+👇 Flow:
+1. Admin selects integrations (e.g., Gmail, Greenhouse).
+2. Triggers & Actions are filtered and shown only for selected integrations.
+3. Admin selects desired triggers/actions and saves them as part of the plan.
+
+✅ Save Payload Example:
+{
+  "name": "Pro Plan",
+  "integrations": ["Gmail", "Greenhouse"],
+  "allowedTriggers": ["new_email_received", "new_candidate"],
+  "allowedActions": ["send_email", "create_candidate"]
+}
+
+🧠 Client-Side Logic (Workflow Builder)
+
+When the client opens their workflow builder:
+1. Load their plan: allowedIntegrations, allowedTriggers, allowedActions
+2. Check which integrations are actually connected by the user
+3. Only show:
+   - Triggers that match both allowedTriggers and a connected integration
+   - Actions that match both allowedActions and a connected integration
+
+🧪 Testing Plan Builder
+
+To verify it works:
+- Create a plan with one integration (e.g., Gmail)
+- Add triggers and actions only for Gmail
+- Save the plan
+- Confirm client UI only shows Gmail items once it’s connected
