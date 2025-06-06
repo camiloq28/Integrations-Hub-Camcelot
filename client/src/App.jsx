@@ -10,6 +10,8 @@ import GreenhouseSetup from './pages/integrations/GreenhouseSetup';
 import WorkflowManagement from './pages/WorkflowManagement';
 import GreenhouseDashboard from './pages/GreenhouseDashboard';
 import OrganizationUserManagement from './pages/OrganizationUserManagement';
+import GmailSetup from './pages/integrations/GmailSetup';
+import BambooHRSetup from './pages/integrations/BambooHRSetup';
 
 function ClientLayout({ children }) {
   return (
@@ -39,6 +41,8 @@ function App() {
         <Route path="/client/workflows" element={<ClientLayout><WorkflowManagement /></ClientLayout>} />
         <Route path="/client/workflows/edit/:id" element={<ClientLayout><WorkflowBuilder /></ClientLayout>} />
         <Route path="/client/integrations/greenhouse" element={<ClientLayout><GreenhouseSetup /></ClientLayout>} />
+        <Route path="/client/integrations/gmail" element={<ClientLayout><GmailSetup /></ClientLayout>} />
+        <Route path="/client/integrations/bamboo-hr" element={<ClientLayout><BambooHRSetup /></ClientLayout>} />
 
         {/* 🔚 Fallback route */}
         <Route path="*" element={<div>404 - Page Not Found</div>} />
