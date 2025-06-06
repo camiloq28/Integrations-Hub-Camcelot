@@ -27,13 +27,26 @@ function WorkflowBuilder() {
 
         const allowedActions = portalData.allowedActions || [];
         const allowedTriggers = portalData.allowedTriggers || [];
-        const connectedIntegrations = portalData.connectedIntegrations || [];
+        const allowedIntegrations = portalData.allowedIntegrations || [];
+
+        // Check which integrations are connected
+        const connectedIntegrations = [];
+        for (const integration of allowedIntegrations) {
+          const slug = integration.toLowerCase().replace(/\s+/g, '-');
+          try {
+            await axiosAuth.get(`/api/integrations/${slug}/credentials`);
+            connectedIntegrations.push(integration);
+          } catch {
+            // Integration not connected, skip it
+          }
+        }
 
         const metaRes = await axiosAuth.get('/api/integrations/meta');
         const { actionsByIntegration, triggersByIntegration } = metaRes.data;
 
         const filteredActions = {};
         for (const [integration, meta] of Object.entries(actionsByIntegration)) {
+          // Only include integrations that are both allowed and connected
           if (!connectedIntegrations.includes(integration)) continue;
 
           const filtered = meta.actions.filter(action =>
@@ -44,6 +57,7 @@ function WorkflowBuilder() {
 
         const filteredTriggers = [];
         for (const [integration, meta] of Object.entries(triggersByIntegration)) {
+          // Only include integrations that are both allowed and connected
           if (!connectedIntegrations.includes(integration)) continue;
 
           const filtered = meta.triggers.filter(trigger =>
