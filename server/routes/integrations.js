@@ -103,6 +103,9 @@ router.get('/triggers', protect, hasRole('client_admin', 'client_editor', 'clien
   }
 });
 
+// ✅ Mount meta route
+router.use('/meta', require('./integrations/meta'));
+
 // ✅ Mount modular metadata route
 const metaRoutes = require('./integrations/meta');
 router.use('/meta', metaRoutes);

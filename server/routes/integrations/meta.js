@@ -1,18 +1,40 @@
-// server/routes/integrations/meta.js
 
 const express = require('express');
-const router = express.Router();
 const { protect } = require('../../middleware/authMiddleware');
-const { hasRole } = require('../../middleware/roleMiddleware');
-const { getAllIntegrationMetadata } = require('../../utils/loadIntegrationMetadata');
+const loadIntegrationMetadata = require('../../utils/loadIntegrationMetadata');
 
-router.get('/', protect, hasRole('admin', 'platform_editor', 'client_admin', 'client_editor', 'client_viewer'), async (req, res) => {
+const router = express.Router();
+
+// GET /api/integrations/meta - Return all available triggers and actions by integration
+router.get('/', protect, async (req, res) => {
   try {
-    const metadata = await getAllIntegrationMetadata();
-    res.json(metadata);
+    const metadata = loadIntegrationMetadata();
+    
+    const actionsByIntegration = {};
+    const triggersByIntegration = {};
+    
+    // Process each integration's metadata
+    Object.entries(metadata).forEach(([integration, meta]) => {
+      if (meta.actions && Array.isArray(meta.actions)) {
+        actionsByIntegration[integration] = {
+          actions: meta.actions
+        };
+      }
+      
+      if (meta.triggers && Array.isArray(meta.triggers)) {
+        triggersByIntegration[integration] = {
+          triggers: meta.triggers
+        };
+      }
+    });
+    
+    res.json({
+      actionsByIntegration,
+      triggersByIntegration
+    });
   } catch (err) {
-    console.error('❌ Failed to load integration metadata:', err);
-    res.status(500).json({ message: 'Server error loading metadata' });
+    console.error('Error loading integration metadata:', err);
+    res.status(500).json({ message: 'Failed to load integration metadata' });
   }
 });
 

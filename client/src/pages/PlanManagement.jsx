@@ -45,11 +45,11 @@ function PlanManagement() {
       const actionMeta = availableActions.filter(a => a.integration === integration);
 
       triggerMeta.forEach(t => {
-        if ((editingPlan.allowedTriggers || []).includes(t.key)) matchedTriggers.push(t);
+        if ((editingPlan.allowedTriggers || []).includes(`${integration}.${t.key}`)) matchedTriggers.push(t);
       });
 
       actionMeta.forEach(a => {
-        if ((editingPlan.allowedActions || []).includes(a.key)) matchedActions.push(a);
+        if ((editingPlan.allowedActions || []).includes(`${integration}.${a.key}`)) matchedActions.push(a);
       });
     }
 
@@ -147,8 +147,8 @@ function PlanManagement() {
     const payload = {
       name: newPlanName,
       integrations: selectedIntegrations,
-      allowedTriggers: selectedTriggers.map(t => t.key),
-      allowedActions: selectedActions.map(a => a.key)
+      allowedTriggers: selectedTriggers.map(t => `${t.integration}.${t.key}`),
+      allowedActions: selectedActions.map(a => `${a.integration}.${a.key}`)
     };
 
     const url = editingPlan ? `/api/plan/plans/${editingPlan._id}` : '/api/plan/plans';
