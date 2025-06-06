@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const mongoose = require('mongoose');
+
+// Load environment variables from .env.admin
 require('dotenv').config({ path: '.env.admin' });
 
 const authRoutes = require('./routes/auth');
@@ -43,7 +45,7 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const mongoose = require('mongoose');
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
