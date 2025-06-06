@@ -143,65 +143,74 @@ function EnvironmentVariables() {
         Manage environment variables for integrations and system configuration.
       </p>
 
-      {!showAddForm && (
-        <button 
-          onClick={() => setShowAddForm(true)}
-          style={{ marginBottom: '20px', background: '#4CAF50', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '4px' }}
-        >
-          Add Custom Variable
-        </button>
-      )}
-
-      {showAddForm && (
-        <div style={{ background: '#1e1e1e', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
-          <h3>Add Custom Environment Variable</h3>
-          <div style={{ marginBottom: '15px' }}>
-            <label>Key:</label>
-            <input
-              type="text"
-              value={newVar.key}
-              onChange={(e) => setNewVar({ ...newVar, key: e.target.value })}
-              placeholder="CUSTOM_VARIABLE_NAME"
-              style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#333', border: '1px solid #555', color: 'white' }}
-            />
+      <div style={{ background: '#1e1e1e', padding: '15px', borderRadius: '8px', marginBottom: '30px', border: showAddForm ? '2px solid #4CAF50' : '1px solid #333' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowAddForm(!showAddForm)}>
+          <div>
+            <strong>Add Custom Variable</strong>
+            <p style={{ color: '#888', fontSize: '14px', margin: '5px 0 0 0' }}>Create a new environment variable</p>
           </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>Value:</label>
-            <input
-              type="password"
-              value={newVar.value}
-              onChange={(e) => setNewVar({ ...newVar, value: e.target.value })}
-              placeholder="Variable value"
-              style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#333', border: '1px solid #555', color: 'white' }}
-            />
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>Description:</label>
-            <input
-              type="text"
-              value={newVar.description}
-              onChange={(e) => setNewVar({ ...newVar, description: e.target.value })}
-              placeholder="Description of this variable"
-              style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#333', border: '1px solid #555', color: 'white' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              onClick={() => saveEnvVar(newVar.key, newVar.value, newVar.description)}
-              disabled={!newVar.key || !newVar.value}
-              style={{ background: '#4CAF50', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
-            >
-              Save
-            </button>
-            <button 
-              onClick={() => setShowAddForm(false)}
-              style={{ background: '#666', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
-            >
-              Cancel
-            </button>
-          </div>
+          <span style={{ color: '#888', fontSize: '12px' }}>
+            {showAddForm ? '▼ Click to collapse' : '▶ Click to add'}
+          </span>
         </div>
-      )}
+        
+        {showAddForm && (
+          <div style={{ marginTop: '15px', padding: '15px', background: '#2a2a2a', borderRadius: '6px' }}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Key:</label>
+              <input
+                type="text"
+                value={newVar.key}
+                onChange={(e) => setNewVar({ ...newVar, key: e.target.value })}
+                placeholder="CUSTOM_VARIABLE_NAME"
+                style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Value:</label>
+              <input
+                type="password"
+                value={newVar.value}
+                onChange={(e) => setNewVar({ ...newVar, value: e.target.value })}
+                placeholder="Variable value"
+                style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+              />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#ccc' }}>Description:</label>
+              <input
+                type="text"
+                value={newVar.description}
+                onChange={(e) => setNewVar({ ...newVar, description: e.target.value })}
+                placeholder="Description of this variable"
+                style={{ width: '100%', padding: '8px', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => saveEnvVar(newVar.key, newVar.value, newVar.description)}
+                disabled={!newVar.key || !newVar.value}
+                style={{ 
+                  background: (newVar.key && newVar.value) ? '#4CAF50' : '#666', 
+                  color: 'white', 
+                  padding: '8px 16px', 
+                  border: 'none', 
+                  borderRadius: '4px',
+                  cursor: (newVar.key && newVar.value) ? 'pointer' : 'not-allowed'
+                }}
+              >
+                Save
+              </button>
+              <button 
+                onClick={() => setShowAddForm(false)}
+                style={{ background: '#666', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {Object.entries(envVarGroups).map(([groupName, variables]) => (
         <div key={groupName} style={{ marginBottom: '40px' }}>
