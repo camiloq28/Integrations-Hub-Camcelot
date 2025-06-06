@@ -66,18 +66,8 @@ router.post('/', protect, adminOnly, async (req, res) => {
       return res.status(400).json({ message: 'Key and value are required' });
     }
 
-    // For critical system vars, recommend using Replit Secrets
-    const systemVars = [
-      'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET', 
-      'SLACK_CLIENT_ID', 'SLACK_CLIENT_SECRET',
-      'GREENHOUSE_API_KEY', 'BAMBOOHR_API_KEY',
-      'BASE_URL', 'CLIENT_URL', 'SENTRY_DSN'
-    ];
-    if (systemVars.includes(key)) {
-      return res.status(400).json({ 
-        message: `${key} should be set using Replit Secrets tool for security. Go to Tools > Secrets to set this variable.`
-      });
-    }
+    // Note: For production, these should be set using Replit Secrets
+    // Allowing temporary storage for development purposes
 
     // Store in admin env file for custom variables
     let envContent = '';
