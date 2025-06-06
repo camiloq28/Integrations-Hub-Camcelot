@@ -27,6 +27,11 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
       });
     }
 
+    const { accountName } = req.query;
+    if (!accountName) {
+      return res.status(400).json({ message: 'Account name is required' });
+    }
+
     const oauth2Client = getGmailOAuth2Client();
     
     const scopes = [
@@ -36,10 +41,15 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
       'https://www.googleapis.com/auth/gmail.readonly'
     ];
 
+    const state = JSON.stringify({
+      orgId: req.user.orgId,
+      accountName: accountName
+    });
+
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
-      state: req.user.orgId // Pass orgId in state for callback
+      state: state
     });
 
     res.json({ authUrl });
@@ -53,10 +63,15 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
 router.get('/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    const orgId = state; // orgId was passed in state
+    
+    if (!code || !state) {
+      return res.status(400).send('Missing authorization code or state');
+    }
 
-    if (!code || !orgId) {
-      return res.status(400).send('Missing authorization code or organization ID');
+    const { orgId, accountName } = JSON.parse(state);
+
+    if (!orgId || !accountName) {
+      return res.status(400).send('Missing organization ID or account name');
     }
 
     const oauth2Client = getGmailOAuth2Client();
@@ -67,16 +82,21 @@ router.get('/oauth/callback', async (req, res) => {
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
 
+    // Check if this is the first account for this org/integration
+    const existingAccounts = await IntegrationCredential.find({ orgId, integration: 'gmail' });
+    const isFirstAccount = existingAccounts.length === 0;
+
     // Save credentials
     const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
     
     await IntegrationCredential.findOneAndUpdate(
-      { orgId, integration: 'gmail' },
+      { orgId, integration: 'gmail', accountName },
       {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
         tokenType: tokens.token_type || 'Bearer',
         expiresAt: expiryDate,
+        isDefault: isFirstAccount, // First account becomes default
         metadata: {
           email: userInfo.data.email,
           name: userInfo.data.name,
@@ -87,34 +107,36 @@ router.get('/oauth/callback', async (req, res) => {
     );
 
     // Redirect to success page
-    res.redirect(`${process.env.CLIENT_URL}/client/integrations/gmail?success=true`);
+    res.redirect(`${process.env.CLIENT_URL}/client/integrations/gmail?success=true&account=${encodeURIComponent(accountName)}`);
   } catch (err) {
     console.error('❌ OAuth callback error:', err);
     res.redirect(`${process.env.CLIENT_URL}/client/integrations/gmail?error=oauth_failed`);
   }
 });
 
-// Get Gmail credentials
+// Get Gmail credentials (all accounts)
 router.get('/credentials', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
-    const creds = await IntegrationCredential.findOne({
+    const allCreds = await IntegrationCredential.find({
       orgId: req.user.orgId,
       integration: 'gmail'
-    });
+    }).sort({ isDefault: -1, createdAt: 1 });
 
-    if (!creds) {
+    if (allCreds.length === 0) {
       return res.status(404).json({ message: 'No Gmail credentials found' });
     }
 
     // Don't send sensitive tokens to frontend
-    const safeCredentials = {
+    const safeCredentials = allCreds.map(creds => ({
+      accountName: creds.accountName,
       integration: creds.integration,
+      isDefault: creds.isDefault,
       createdAt: creds.createdAt,
       updatedAt: creds.updatedAt,
       metadata: creds.metadata
-    };
+    }));
 
-    res.json(safeCredentials);
+    res.json({ accounts: safeCredentials });
   } catch (err) {
     console.error('❌ Error fetching Gmail credentials:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -158,18 +180,108 @@ router.post('/test', protect, hasRole('client_admin', 'client_editor'), async (r
   }
 });
 
-// Delete Gmail credentials
-router.delete('/credentials', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+// Delete specific Gmail account
+router.delete('/credentials/:accountName', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
-    await IntegrationCredential.deleteOne({
+    const { accountName } = req.params;
+    
+    const deleted = await IntegrationCredential.findOneAndDelete({
       orgId: req.user.orgId,
-      integration: 'gmail'
+      integration: 'gmail',
+      accountName: accountName
     });
 
-    res.json({ message: 'Gmail credentials deleted successfully' });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // If we deleted the default account, make another one default
+    if (deleted.isDefault) {
+      const remaining = await IntegrationCredential.findOne({
+        orgId: req.user.orgId,
+        integration: 'gmail'
+      });
+      
+      if (remaining) {
+        remaining.isDefault = true;
+        await remaining.save();
+      }
+    }
+
+    res.json({ message: 'Gmail account deleted successfully' });
   } catch (err) {
-    console.error('❌ Error deleting Gmail credentials:', err);
+    console.error('❌ Error deleting Gmail account:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Set default account
+router.post('/credentials/:accountName/set-default', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const { accountName } = req.params;
+    
+    // Remove default from all accounts
+    await IntegrationCredential.updateMany(
+      { orgId: req.user.orgId, integration: 'gmail' },
+      { isDefault: false }
+    );
+
+    // Set new default
+    const updated = await IntegrationCredential.findOneAndUpdate(
+      { orgId: req.user.orgId, integration: 'gmail', accountName },
+      { isDefault: true },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    res.json({ message: 'Default account updated successfully' });
+  } catch (err) {
+    console.error('❌ Error setting default account:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Test specific Gmail account
+router.post('/test/:accountName', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const { accountName } = req.params;
+    
+    const creds = await IntegrationCredential.findOne({
+      orgId: req.user.orgId,
+      integration: 'gmail',
+      accountName
+    });
+
+    if (!creds) {
+      return res.status(404).json({ message: 'Gmail account not found' });
+    }
+
+    const oauth2Client = getGmailOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: creds.accessToken,
+      refresh_token: creds.refreshToken
+    });
+
+    // Test by getting user profile
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const userInfo = await oauth2.userinfo.get();
+
+    res.json({ 
+      success: true, 
+      email: userInfo.data.email,
+      accountName: accountName,
+      message: 'Gmail connection is working' 
+    });
+  } catch (err) {
+    console.error('❌ Gmail test error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Gmail connection failed',
+      error: err.message 
+    });
   }
 });
 
