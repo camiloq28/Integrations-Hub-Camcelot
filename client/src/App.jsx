@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -16,7 +15,6 @@ import GreenhouseDashboard from './pages/GreenhouseDashboard';
 import GmailSetup from './pages/integrations/GmailSetup';
 import BambooHRSetup from './pages/integrations/BambooHRSetup';
 import CMSManagement from './pages/CMSManagement';
-import { loadAndApplyTheme } from './utils/themeUtils';
 
 function ClientLayout({ children }) {
   return (
@@ -28,61 +26,6 @@ function ClientLayout({ children }) {
 }
 
 function App() {
-  useEffect(() => {
-    // Single theme load on app initialization
-    const initializeTheme = () => {
-      try {
-        const result = loadAndApplyTheme();
-        console.log('App theme initialized:', result ? 'loaded' : 'default');
-      } catch (error) {
-        console.warn('Theme initialization failed:', error);
-      }
-    };
-    
-    // Load theme immediately if DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeTheme);
-    } else {
-      initializeTheme();
-    }
-    
-    // Listen for theme changes from CMS management
-    const handleThemeChange = (event) => {
-      if (event.detail && event.detail.themeColors) {
-        console.log('Theme change detected from CMS');
-        // Don't reload, just apply the new theme
-        const root = document.documentElement;
-        Object.entries(event.detail.themeColors).forEach(([key, value]) => {
-          root.style.setProperty(`--color-${key}`, value);
-        });
-      }
-    };
-
-    // Listen for storage changes (when themes are saved in other tabs/windows)
-    const handleStorageChange = (event) => {
-      if (event.key === 'customTheme' && event.newValue) {
-        try {
-          const themeColors = JSON.parse(event.newValue);
-          const root = document.documentElement;
-          Object.entries(themeColors).forEach(([key, value]) => {
-            root.style.setProperty(`--color-${key}`, value);
-          });
-        } catch (error) {
-          console.error('Failed to apply theme from storage change:', error);
-        }
-      }
-    };
-
-    window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      document.removeEventListener('DOMContentLoaded', initializeTheme);
-      window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
   return (
     <Router>
       <Routes>
