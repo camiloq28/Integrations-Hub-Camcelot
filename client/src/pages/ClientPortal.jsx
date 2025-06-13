@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosWithAuth from '../utils/axiosWithAuth';
+import ClientHeader from '../components/ClientHeader';
 
 const ClientPortal = () => {
   const navigate = useNavigate();
@@ -102,23 +103,11 @@ const ClientPortal = () => {
   const { orgName = 'Org', planName = 'N/A', allowedIntegrations = [] } = orgData;
 
   return (
-    <div style={{ maxWidth: '600px', margin: 'auto' }}>
-      <h2>{orgName} Client Portal</h2>
+    <div>
+      <ClientHeader orgName={`${orgName} Client Portal`} user={user} />
+      <div style={{ maxWidth: '600px', margin: 'auto' }}>
 
-      <button onClick={() => navigate('/profile')} style={{ marginRight: '10px' }}>My Profile</button>
-      {['client_admin', 'client_editor'].includes(role) && (
-        <button onClick={() => navigate('/client/workflows')} style={{ marginRight: '10px' }}>
-          Manage Workflows
-        </button>
-      )}
-      {['client_admin', 'client_editor'].includes(role) && (
-        <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>
-          User Management
-        </button>
-      )}
-      <button onClick={logout}>Logout</button>
-
-      <h3 style={{ marginTop: '30px' }}>Plan: {planName}</h3>
+      <h3>Plan: {planName}</h3>
 
       <h3>Allowed Integrations</h3>
       <ul>
@@ -147,7 +136,8 @@ const ClientPortal = () => {
             </li>
           );
         })}
-      </ul>
+        </ul>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosWithAuth from '../utils/axiosWithAuth';
+import ClientHeader from '../components/ClientHeader';
 
 const GreenhouseDashboard = () => {
   const [activeTab, setActiveTab] = useState('jobs');
@@ -104,14 +105,10 @@ const GreenhouseDashboard = () => {
 );
 
   return (
-    <div className="p-6">
-      <button
-        onClick={() => window.location.href = '/client'}
-        className="mb-4 bg-gray-200 hover:bg-gray-300 text-sm px-4 py-2 rounded"
-      >
-        ← Back to Client Portal
-      </button>
-      <h1 className="text-2xl font-bold mb-4">Greenhouse Integration</h1>
+    <div>
+      <ClientHeader orgName="Greenhouse Integration Dashboard" user={{}} />
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Greenhouse Integration</h1>
 
       <div className="mb-4">
         <button onClick={() => setActiveTab('field_mapping')} className={`mr-2 px-4 py-2 rounded ${activeTab === 'field_mapping' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>

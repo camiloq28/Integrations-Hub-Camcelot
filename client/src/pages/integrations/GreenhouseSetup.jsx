@@ -1,10 +1,7 @@
-// /client/src/pages/integrations/GreenhouseSetup.jsx
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import axiosWithAuth from '../../utils/axiosWithAuth';
+import ClientHeader from '../../components/ClientHeader';
 
 function GreenhouseSetup() {
   const navigate = useNavigate();
@@ -54,29 +51,32 @@ function GreenhouseSetup() {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: 'auto' }}>
-      <h2>Greenhouse Integration Setup</h2>
-      <p>Enter and test your Greenhouse Harvest API key below:</p>
+    <div>
+      <ClientHeader />
+      <div style={{ maxWidth: '600px', margin: 'auto' }}>
+        <h2>Greenhouse Integration Setup</h2>
+        <p>Enter and test your Greenhouse Harvest API key below:</p>
 
-      <input
-        type="text"
-        placeholder="Enter Greenhouse API Token"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
-      />
+        <input
+          type="text"
+          placeholder="Enter Greenhouse API Token"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
+        />
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={testToken} disabled={loading}>Test Token</button>
-        <button onClick={saveToken} disabled={status !== 'valid'}>Save Token</button>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+          <button onClick={testToken} disabled={loading}>Test Token</button>
+          <button onClick={saveToken} disabled={status !== 'valid'}>Save Token</button>
+        </div>
+
+        {status === 'valid' && <p style={{ color: 'green' }}>✅ Token is valid.</p>}
+        {status === 'invalid' && <p style={{ color: 'red' }}>❌ Token is invalid.</p>}
+
+        <button onClick={() => navigate('/client')}>Back to Dashboard</button>
+
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
-
-      {status === 'valid' && <p style={{ color: 'green' }}>✅ Token is valid.</p>}
-      {status === 'invalid' && <p style={{ color: 'red' }}>❌ Token is invalid.</p>}
-
-      <button onClick={() => navigate('/client')}>Back to Dashboard</button>
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

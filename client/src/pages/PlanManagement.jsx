@@ -1,10 +1,9 @@
-// /client/src/pages/PlanManagement.jsx
-
-import { useEffect, useState } from 'react';
-import axiosWithAuth from '../utils/axiosWithAuth';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AdminHeader from '../components/AdminHeader';
 
 function PlanManagement() {
   const navigate = useNavigate();
@@ -225,115 +224,116 @@ function PlanManagement() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: 'auto' }}>
-      <button onClick={() => navigate('/admin')} style={{ marginBottom: '20px' }}>Back to Admin Dashboard</button>
+    <div>
+      <AdminHeader />
+      <div style={{ maxWidth: '900px', margin: 'auto' }}>
+        <h3>Manage Available Integrations</h3>
+        <input
+          value={newIntegration}
+          onChange={(e) => setNewIntegration(e.target.value)}
+          placeholder="Integration name"
+        />
+        <button onClick={addIntegration}>Add Integration</button>
+        <ul>
+          {integrations.map((i, idx) => (
+            <li key={`integration-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
+              {typeof i === 'object' ? i.name : i}
+            </li>
+          ))}
+        </ul>
 
-      <h3>Manage Available Integrations</h3>
-      <input
-        value={newIntegration}
-        onChange={(e) => setNewIntegration(e.target.value)}
-        placeholder="Integration name"
-      />
-      <button onClick={addIntegration}>Add Integration</button>
-      <ul>
-        {integrations.map((i, idx) => (
-          <li key={`integration-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
-            {typeof i === 'object' ? i.name : i}
-          </li>
-        ))}
-      </ul>
+        {!showPlanForm && (
+          <button onClick={() => setShowPlanForm(true)}>Create New Plan</button>
+        )}
 
-      {!showPlanForm && (
-        <button onClick={() => setShowPlanForm(true)}>Create New Plan</button>
-      )}
+        {showPlanForm && (
+          <>
+            <h3>{editingPlan ? 'Edit Plan' : 'Create New Plan'}</h3>
+            <input
+              value={newPlanName}
+              onChange={(e) => setNewPlanName(e.target.value)}
+              placeholder="Plan Name"
+            />
 
-      {showPlanForm && (
-        <>
-          <h3>{editingPlan ? 'Edit Plan' : 'Create New Plan'}</h3>
-          <input
-            value={newPlanName}
-            onChange={(e) => setNewPlanName(e.target.value)}
-            placeholder="Plan Name"
-          />
-
-          <h4>Select Integrations</h4>
-          {integrations.map((i, idx) => {
-            const integrationName = typeof i === 'object' ? i.name : i;
-            return (
-              <div key={`select-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selectedIntegrations.includes(integrationName)}
-                    onChange={() => toggleIntegration(integrationName)}
-                  />
-                  {integrationName}
-                </label>
-              </div>
-            );
-          })}
-
-          {selectedIntegrations.length > 0 && (
-            <>
-              <h4>Select Triggers</h4>
-              {availableTriggers.map((t) => (
-                <div key={`trigger-${t.integration}-${t.key}`}>
+            <h4>Select Integrations</h4>
+            {integrations.map((i, idx) => {
+              const integrationName = typeof i === 'object' ? i.name : i;
+              return (
+                <div key={`select-${typeof i === 'object' ? i._id || i.name || idx : i}-${idx}`}>
                   <label>
                     <input
                       type="checkbox"
-                      checked={selectedTriggers.some(sel => sel.key === t.key && sel.integration === t.integration)}
-                      onChange={() =>
-                        setSelectedTriggers((prev) =>
-                          prev.some(sel => sel.key === t.key && sel.integration === t.integration)
-                            ? prev.filter(sel => sel.key !== t.key || sel.integration !== t.integration)
-                            : [...prev, t]
-                        )
-                      }
+                      checked={selectedIntegrations.includes(integrationName)}
+                      onChange={() => toggleIntegration(integrationName)}
                     />
-                    [{t.integration}] {t.label}
+                    {integrationName}
                   </label>
                 </div>
-              ))}
+              );
+            })}
 
-              <h4>Select Actions</h4>
-              {availableActions.map((a) => (
-                <div key={`action-${a.integration}-${a.key}`}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedActions.some(sel => sel.key === a.key && sel.integration === a.integration)}
-                      onChange={() =>
-                        setSelectedActions((prev) =>
-                          prev.some(sel => sel.key === a.key && sel.integration === a.integration)
-                            ? prev.filter(sel => sel.key !== a.key || sel.integration !== a.integration)
-                            : [...prev, a]
-                        )
-                      }
-                    />
-                    [{a.integration}] {a.label}
-                  </label>
-                </div>
-              ))}
-            </>
-          )}
+            {selectedIntegrations.length > 0 && (
+              <>
+                <h4>Select Triggers</h4>
+                {availableTriggers.map((t) => (
+                  <div key={`trigger-${t.integration}-${t.key}`}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedTriggers.some(sel => sel.key === t.key && sel.integration === t.integration)}
+                        onChange={() =>
+                          setSelectedTriggers((prev) =>
+                            prev.some(sel => sel.key === t.key && sel.integration === t.integration)
+                              ? prev.filter(sel => sel.key !== t.key || sel.integration !== t.integration)
+                              : [...prev, t]
+                          )
+                        }
+                      />
+                      [{t.integration}] {t.label}
+                    </label>
+                  </div>
+                ))}
 
-          <button onClick={savePlan}>Save Plan</button>
-          <button onClick={() => setShowPlanForm(false)}>Cancel</button>
-        </>
-      )}
+                <h4>Select Actions</h4>
+                {availableActions.map((a) => (
+                  <div key={`action-${a.integration}-${a.key}`}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedActions.some(sel => sel.key === a.key && sel.integration === a.integration)}
+                        onChange={() =>
+                          setSelectedActions((prev) =>
+                            prev.some(sel => sel.key === a.key && sel.integration === a.integration)
+                              ? prev.filter(sel => sel.key !== a.key || sel.integration !== a.integration)
+                              : [...prev, a]
+                          )
+                        }
+                      />
+                      [{a.integration}] {a.label}
+                    </label>
+                  </div>
+                ))}
+              </>
+            )}
 
-      <h3>Existing Plans</h3>
-      <ul>
-        {plans.map((plan) => (
-          <li key={plan._id}>
-            <strong>{plan.name}</strong> – {plan.integrations.join(', ')}
-            <button onClick={() => startEditPlan(plan)} style={{ marginLeft: '10px' }}>Edit</button>
-            <button onClick={() => deletePlan(plan._id)} style={{ marginLeft: '5px', color: 'red' }}>Delete</button>
-          </li>
-        ))}
-      </ul>
+            <button onClick={savePlan}>Save Plan</button>
+            <button onClick={() => setShowPlanForm(false)}>Cancel</button>
+          </>
+        )}
 
-      <ToastContainer position="top-right" autoClose={3000} />
+        <h3>Existing Plans</h3>
+        <ul>
+          {plans.map((plan) => (
+            <li key={plan._id}>
+              <strong>{plan.name}</strong> – {plan.integrations.join(', ')}
+              <button onClick={() => startEditPlan(plan)} style={{ marginLeft: '10px' }}>Edit</button>
+              <button onClick={() => deletePlan(plan._id)} style={{ marginLeft: '5px', color: 'red' }}>Delete</button>
+            </li>
+          ))}
+        </ul>
+
+        <ToastContainer position="top-right" autoClose={3000} />
+      </div>
     </div>
   );
 }

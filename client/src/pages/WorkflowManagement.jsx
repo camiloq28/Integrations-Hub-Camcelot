@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import axiosWithAuth from '../utils/axiosWithAuth';
 import { useNavigate, Link } from 'react-router-dom';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ClientHeader from '../components/ClientHeader';
 
 function WorkflowManagement() {
   const [workflows, setWorkflows] = useState([]);
@@ -72,17 +73,7 @@ function WorkflowManagement() {
 
   return (
     <div style={{ maxWidth: '900px', margin: 'auto' }}>
-      <h2>{orgName} Client Portal</h2>
-      <div style={{ marginBottom: '20px' }}>
-        <button onClick={() => navigate('/profile')} style={{ marginRight: '10px' }}>My Profile</button>
-        {['client_admin', 'client_editor'].includes(role) && (
-          <>
-            <button onClick={() => navigate('/client/workflows')} style={{ marginRight: '10px' }}>Manage Workflows</button>
-            <button onClick={() => navigate(`/org/${orgId}/users`)} style={{ marginRight: '10px' }}>User Management</button>
-          </>
-        )}
-        <button onClick={logout}>Logout</button>
-      </div>
+      <ClientHeader />
 
       <h3>Workflow Management</h3>
       <button onClick={() => navigate('/create-workflow')}>Create Workflow</button>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ClientHeader from '../components/ClientHeader';
 
 function OrganizationUserManagement() {
   const { orgId: paramOrgId } = useParams();
@@ -222,122 +223,125 @@ function OrganizationUserManagement() {
   };
 
 
-  
+
   return (
-    <div style={{ maxWidth: '900px', margin: 'auto' }}>
-      <h2>{orgName || 'Organization'} Users</h2>
+    <div>
+      <ClientHeader orgName={`${orgName} Client Portal`}  />
+      <div style={{ maxWidth: '900px', margin: 'auto' }}>
+        <h2>{orgName || 'Organization'} Users</h2>
 
-      {(role === 'admin' || role === 'platform_editor') && (
-        <>
-          <div style={{ marginBottom: '20px' }}>
-            <label><strong>Plan:</strong></label>
-            <select
-              value={orgPlan?._id || ''}
-              onChange={(e) => updateOrgPlan(e.target.value)}
-              style={{ marginLeft: '10px' }}
-            >
-              <option value="" disabled>Select a Plan</option>
-              {availablePlans.map(plan => (
-                <option key={plan._id} value={plan._id}>{plan.name}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label><strong>Plan Integrations:</strong></label>
-            <ul style={{ paddingLeft: '20px' }}>
-              {orgIntegrations.length > 0 ? (
-                orgIntegrations.map(integration => (
-                  <li key={integration} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ color: '#4CAF50' }}>✓</span> {integration}
-                  </li>
-                ))
-              ) : (
-                <li style={{ color: '#888' }}>No integrations available in this plan</li>
-              )}
-            </ul>
-          </div>
-        </>
-      )}
-
-      <h3>Create New User</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-        <input type="text" placeholder="First Name" value={newUser.firstName} onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })} />
-        <input type="text" placeholder="Last Name" value={newUser.lastName} onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })} />
-        <input type="email" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-        <input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
-        <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
-          <option value="client_admin">Client Admin</option>
-          <option value="client_editor">Client Editor</option>
-          <option value="client_viewer">Client Viewer</option>
-        </select>
-        <button onClick={handleCreateUser}>Create</button>
-      </div>
-
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ccc', textAlign: 'left' }}>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user, i) => (
-            <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-              <td>
-                {editingUser?.email === user.email ? (
-                  <>
-                    <input value={editFields.firstName} onChange={(e) => setEditFields({ ...editFields, firstName: e.target.value })} style={{ width: '90px' }} />
-                    <input value={editFields.lastName} onChange={(e) => setEditFields({ ...editFields, lastName: e.target.value })} style={{ width: '90px', marginLeft: '5px' }} />
-                  </>
+        {(role === 'admin' || role === 'platform_editor') && (
+          <>
+            <div style={{ marginBottom: '20px' }}>
+              <label><strong>Plan:</strong></label>
+              <select
+                value={orgPlan?._id || ''}
+                onChange={(e) => updateOrgPlan(e.target.value)}
+                style={{ marginLeft: '10px' }}
+              >
+                <option value="" disabled>Select a Plan</option>
+                {availablePlans.map(plan => (
+                  <option key={plan._id} value={plan._id}>{plan.name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label><strong>Plan Integrations:</strong></label>
+              <ul style={{ paddingLeft: '20px' }}>
+                {orgIntegrations.length > 0 ? (
+                  orgIntegrations.map(integration => (
+                    <li key={integration} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ color: '#4CAF50' }}>✓</span> {integration}
+                    </li>
+                  ))
                 ) : (
-                  `${user.firstName} ${user.lastName}`
+                  <li style={{ color: '#888' }}>No integrations available in this plan</li>
                 )}
-              </td>
-              <td>{user.email}</td>
-              <td>
-                {editingUser?.email === user.email ? (
-                  <select value={editFields.role} onChange={(e) => setEditFields({ ...editFields, role: e.target.value })}>
-                    <option value="client_admin">Client Admin</option>
-                    <option value="client_editor">Client Editor</option>
-                    <option value="client_viewer">Client Viewer</option>
-                  </select>
-                ) : (
-                  user.role
-                )}
-              </td>
-              <td>
-                <button onClick={() => toggleStatus(user.email, user.status)} style={{ backgroundColor: user.status === 'active' ? 'green' : 'red', color: 'white', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer' }}>
-                  {user.status === 'active' ? 'Active' : 'Disabled'}
-                </button>
-              </td>
-              <td>
-                {(role === 'admin' || role === 'platform_editor' || role === 'client_admin') && (
-                  editingUser?.email === user.email ? (
+              </ul>
+            </div>
+          </>
+        )}
+
+        <h3>Create New User</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          <input type="text" placeholder="First Name" value={newUser.firstName} onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })} />
+          <input type="text" placeholder="Last Name" value={newUser.lastName} onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })} />
+          <input type="email" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+          <input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+          <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
+            <option value="client_admin">Client Admin</option>
+            <option value="client_editor">Client Editor</option>
+            <option value="client_viewer">Client Viewer</option>
+          </select>
+          <button onClick={handleCreateUser}>Create</button>
+        </div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #ccc', textAlign: 'left' }}>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                <td>
+                  {editingUser?.email === user.email ? (
                     <>
-                      <button onClick={handleSaveEdit}>Save</button>
-                      <button onClick={() => setEditingUser(null)}>Cancel</button>
+                      <input value={editFields.firstName} onChange={(e) => setEditFields({ ...editFields, firstName: e.target.value })} style={{ width: '90px' }} />
+                      <input value={editFields.lastName} onChange={(e) => setEditFields({ ...editFields, lastName: e.target.value })} style={{ width: '90px', marginLeft: '5px' }} />
                     </>
                   ) : (
-                    <>
-                      <button onClick={() => startEdit(user)}>Edit</button>
-                      <button onClick={() => deleteUser(user.email)} style={{ marginLeft: '10px', backgroundColor: '#dc3545', color: 'white' }}>Delete</button>
-                    </>
-                  )
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    `${user.firstName} ${user.lastName}`
+                  )}
+                </td>
+                <td>{user.email}</td>
+                <td>
+                  {editingUser?.email === user.email ? (
+                    <select value={editFields.role} onChange={(e) => setEditFields({ ...editFields, role: e.target.value })}>
+                      <option value="client_admin">Client Admin</option>
+                      <option value="client_editor">Client Editor</option>
+                      <option value="client_viewer">Client Viewer</option>
+                    </select>
+                  ) : (
+                    user.role
+                  )}
+                </td>
+                <td>
+                  <button onClick={() => toggleStatus(user.email, user.status)} style={{ backgroundColor: user.status === 'active' ? 'green' : 'red', color: 'white', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer' }}>
+                    {user.status === 'active' ? 'Active' : 'Disabled'}
+                  </button>
+                </td>
+                <td>
+                  {(role === 'admin' || role === 'platform_editor' || role === 'client_admin') && (
+                    editingUser?.email === user.email ? (
+                      <>
+                        <button onClick={handleSaveEdit}>Save</button>
+                        <button onClick={() => setEditingUser(null)}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(user)}>Edit</button>
+                        <button onClick={() => deleteUser(user.email)} style={{ marginLeft: '10px', backgroundColor: '#dc3545', color: 'white' }}>Delete</button>
+                      </>
+                    )
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <button onClick={() => navigate(role === 'admin' || role === 'platform_editor' ? '/users' : '/client')} style={{ marginTop: '30px' }}>
-        Back
-      </button>
+        <button onClick={() => navigate(role === 'admin' || role === 'platform_editor' ? '/users' : '/client')} style={{ marginTop: '30px' }}>
+          Back
+        </button>
 
-      <ToastContainer position="top-right" autoClose={3000} />
+        <ToastContainer position="top-right" autoClose={3000} />
+      </div>
     </div>
   );
 }

@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AdminHeader from '../components/AdminHeader';
+import ClientHeader from '../components/ClientHeader';
 
 function UserProfile() {
   const navigate = useNavigate();
@@ -11,6 +14,7 @@ function UserProfile() {
   const [organization, setOrganization] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('');
+    const [user, setUser] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -39,6 +43,13 @@ function UserProfile() {
           setFirstName(data.firstName || '');
           setLastName(data.lastName || '');
           setOrganization(data.organization || '');
+            setUser({
+              email: data.email || '',
+              firstName: data.firstName || '',
+              lastName: data.lastName || '',
+              organization: data.organization || '',
+              role: storedRole
+            });
         } catch (e) {
           console.error('❌ Failed to parse profile JSON. Raw response:', raw);
           toast.error('Error loading profile.');
@@ -123,8 +134,14 @@ function UserProfile() {
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: 'auto' }}>
-      <h2>User Profile</h2>
+    <div>
+      {user?.role === 'admin' ? (
+        <AdminHeader />
+      ) : (
+        <ClientHeader orgName="User Profile" user={user} />
+      )}
+      <div style={{ maxWidth: '600px', margin: 'auto' }}>
+        <h2>User Profile</h2>
 
       <p><strong>Email:</strong> {email}</p>
 
@@ -177,6 +194,7 @@ function UserProfile() {
       </button>
 
       <ToastContainer position="top-right" autoClose={3000} />
+    </div>
     </div>
   );
 }

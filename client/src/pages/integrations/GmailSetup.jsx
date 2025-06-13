@@ -1,7 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axiosWithAuth from '../../utils/axiosWithAuth';
+import ClientHeader from '../../components/ClientHeader';
+import { useSearchParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 
 const GmailSetup = () => {
@@ -17,6 +18,11 @@ const GmailSetup = () => {
     subject: 'Test Email from Gmail Integration',
     body: 'This is a test email sent from your Gmail integration setup. If you received this, your Gmail integration is working correctly!'
   });
+
+  const user = {
+    firstName: 'John',
+    lastName: 'Doe'
+  }
 
   useEffect(() => {
     // Check for OAuth callback results
@@ -106,10 +112,10 @@ const GmailSetup = () => {
       const axiosAuth = axiosWithAuth();
       await axiosAuth.delete(`/api/integrations/gmail/credentials/${accountName}`);
       toast.success(`${accountName} account deleted successfully`);
-      
+
       // Refresh the accounts list
       await fetchAccounts();
-      
+
       // Trigger a custom event to notify parent components to refresh their data
       window.dispatchEvent(new CustomEvent('integrationStatusChanged', { 
         detail: { integration: 'Gmail', action: 'deleted', accountName } 
@@ -136,7 +142,7 @@ const GmailSetup = () => {
     try {
       const axiosAuth = axiosWithAuth();
       const response = await axiosAuth.post('/api/integrations/gmail/send-test-email', testEmailData);
-      
+
       if (response.data.success) {
         toast.success(response.data.message);
         setShowTestEmailForm(false);
@@ -156,9 +162,11 @@ const GmailSetup = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
-      <h2>Gmail Integration Setup</h2>
-      
+    <div>
+      <ClientHeader orgName="Gmail Integration Setup" user={user} />
+      <div style={{ maxWidth: '600px', margin: 'auto' }}>
+        <h2>Gmail Integration Setup</h2>
+
       {accounts.length > 0 && (
         <div style={{ marginBottom: '30px' }}>
           <h3>Connected Gmail Accounts</h3>
@@ -241,7 +249,7 @@ const GmailSetup = () => {
                 Give this Gmail account a descriptive name to help you identify it later.
               </small>
             </div>
-            
+
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={initiateOAuth}
@@ -406,6 +414,8 @@ const GmailSetup = () => {
       )}
 
       <ToastContainer position="top-right" autoClose={3000} />
+        </div>
+      </div>
     </div>
   );
 };
