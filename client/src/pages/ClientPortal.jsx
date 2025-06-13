@@ -77,8 +77,13 @@ const ClientPortal = () => {
     // Listen for integration status changes
     const handleIntegrationChange = (event) => {
       console.log('🔄 Integration status changed:', event.detail);
-      if (orgData?.allowedIntegrations) {
-        fetchIntegrationStatus(orgData.allowedIntegrations);
+      // Get fresh orgData from state
+      const storedUserRaw = localStorage.getItem('user');
+      if (storedUserRaw) {
+        const axiosAuth = axiosWithAuth();
+        axiosAuth.get('/api/client/portal').then(res => {
+          fetchIntegrationStatus(res.data.allowedIntegrations);
+        }).catch(err => console.error('Error refreshing integration status:', err));
       }
     };
 
@@ -87,7 +92,7 @@ const ClientPortal = () => {
     return () => {
       window.removeEventListener('integrationStatusChanged', handleIntegrationChange);
     };
-  }, [orgData?.allowedIntegrations]);
+  }, []); // Remove the problematic dependency
 
   const logout = () => {
     localStorage.removeItem('user');
