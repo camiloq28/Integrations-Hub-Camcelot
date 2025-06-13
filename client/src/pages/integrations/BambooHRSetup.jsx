@@ -89,9 +89,22 @@ function BambooHRSetup() {
     }
   };
 
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage');
+      }
+    }
+  }, []);
+
   return (
     <div>
-      <ClientHeader />
+      <ClientHeader orgName="Bamboo HR Setup" user={user} />
       <div style={{ maxWidth: '600px', margin: 'auto' }}>
         <h2>BambooHR Integration Setup</h2>
         <p>Connect your BambooHR account using your API key and subdomain.</p>

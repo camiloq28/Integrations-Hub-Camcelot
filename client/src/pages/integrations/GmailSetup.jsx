@@ -19,10 +19,18 @@ const GmailSetup = () => {
     body: 'This is a test email sent from your Gmail integration setup. If you received this, your Gmail integration is working correctly!'
   });
 
-  const user = {
-    firstName: 'John',
-    lastName: 'Doe'
-  }
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check for OAuth callback results
@@ -163,7 +171,7 @@ const GmailSetup = () => {
 
   return (
     <div>
-      <ClientHeader orgName="Gmail Integration Setup" user={user} />
+      <ClientHeader orgName="Gmail Setup" user={user} />
       <div style={{ maxWidth: '600px', margin: 'auto' }}>
         <h2>Gmail Integration Setup</h2>
 

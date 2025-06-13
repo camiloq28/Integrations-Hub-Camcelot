@@ -14,6 +14,7 @@ import GreenhouseSetup from './pages/integrations/GreenhouseSetup';
 import GreenhouseDashboard from './pages/GreenhouseDashboard';
 import GmailSetup from './pages/integrations/GmailSetup';
 import BambooHRSetup from './pages/integrations/BambooHRSetup';
+import CMSManagement from './pages/CMSManagement';
 
 function ClientLayout({ children }) {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/create-workflow" element={<WorkflowBuilder />} />
         <Route path="/plans" element={<PlanManagement />} />
         <Route path="/admin/env-vars" element={<EnvironmentVariables />} />
+        <Route path="/admin/cms" element={<CMSManagement />} />
         <Route path="/client/integrations/greenhouse/dashboard" element={<GreenhouseDashboard />} />
         <Route path="/org/:orgId/users" element={<OrganizationUserManagement />} />
 

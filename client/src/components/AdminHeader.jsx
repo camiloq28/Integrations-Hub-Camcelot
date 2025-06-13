@@ -98,6 +98,20 @@ const AdminHeader = () => {
           </button>
           
           <button 
+            onClick={() => navigate('/admin/cms')}
+            style={{ 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none', 
+              padding: '8px 16px', 
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            CMS Management
+          </button>
+          
+          <button 
             onClick={logout}
             style={{ 
               backgroundColor: '#dc3545', 

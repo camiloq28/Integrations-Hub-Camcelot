@@ -52,9 +52,22 @@ function GreenhouseSetup() {
     }
   };
 
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage');
+      }
+    }
+  }, []);
+
   return (
     <div>
-      <ClientHeader orgName="Greenhouse Setup" user={{}} />
+      <ClientHeader orgName="Greenhouse Setup" user={user} />
       <div style={{ maxWidth: '600px', margin: 'auto' }}>
         <h2>Greenhouse Integration Setup</h2>
         <p>Enter and test your Greenhouse Harvest API key below:</p>

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axiosWithAuth from '../utils/axiosWithAuth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axiosWithAuth from '../utils/axiosWithAuth';
 import ClientHeader from '../components/ClientHeader';
 
 function WorkflowManagement() {
@@ -13,6 +13,18 @@ function WorkflowManagement() {
   const [orgId, setOrgId] = useState('');
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const axiosAuth = axiosWithAuth();
@@ -73,7 +85,7 @@ function WorkflowManagement() {
 
   return (
     <div style={{ maxWidth: '900px', margin: 'auto' }}>
-      <ClientHeader />
+      <ClientHeader user={user} />
 
       <h3>Workflow Management</h3>
       <button onClick={() => navigate('/create-workflow')}>Create Workflow</button>
