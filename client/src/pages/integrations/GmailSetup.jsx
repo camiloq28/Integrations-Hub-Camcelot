@@ -99,7 +99,14 @@ const GmailSetup = () => {
       const axiosAuth = axiosWithAuth();
       await axiosAuth.delete(`/api/integrations/gmail/credentials/${accountName}`);
       toast.success(`${accountName} account deleted successfully`);
-      fetchAccounts(); // Refresh list
+      
+      // Refresh the accounts list
+      await fetchAccounts();
+      
+      // Force a page refresh after a short delay to ensure integration status updates
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       toast.error('Error deleting account');
     }
