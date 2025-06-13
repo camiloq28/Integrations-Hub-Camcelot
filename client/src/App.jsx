@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { loadAndApplyTheme } from './utils/themeUtils';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import UserProfile from './pages/UserProfile';
@@ -26,6 +27,11 @@ function ClientLayout({ children }) {
 }
 
 function App() {
+  useEffect(() => {
+    // Ensure theme is loaded on app initialization
+    loadAndApplyTheme();
+  }, []);
+
   return (
     <Router>
       <Routes>
