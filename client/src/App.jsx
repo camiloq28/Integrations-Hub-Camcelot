@@ -36,9 +36,12 @@ function App() {
         Object.entries(themeColors).forEach(([key, value]) => {
           root.style.setProperty(`--color-${key}`, value);
         });
+        console.log('Applied saved theme:', themeColors);
       } catch (error) {
         console.error('Failed to load saved theme:', error);
       }
+    } else {
+      console.log('No saved theme found, using default');
     }
   }, []);
 

@@ -92,6 +92,18 @@ const CMSManagement = () => {
 
   useEffect(() => {
     fetchMenus();
+    
+    // Load saved theme when component mounts
+    const savedTheme = localStorage.getItem('customTheme');
+    if (savedTheme) {
+      try {
+        const parsedTheme = JSON.parse(savedTheme);
+        setThemeColors(parsedTheme);
+        console.log('CMS: Loaded saved theme on mount');
+      } catch (error) {
+        console.error('CMS: Failed to load saved theme on mount:', error);
+      }
+    }
   }, []);
 
   const fetchMenus = async () => {
@@ -188,8 +200,10 @@ const CMSManagement = () => {
               key={preset.key}
               onClick={() => {
                 setActiveTheme(preset.key);
+                let newThemeColors;
+                
                 if (preset.key === 'dark') {
-                  setThemeColors({
+                  newThemeColors = {
                     ...themeColors,
                     primary: '#0d6efd',
                     background: '#121212',
@@ -197,9 +211,9 @@ const CMSManagement = () => {
                     text: '#ffffff',
                     textSecondary: '#adb5bd',
                     border: '#495057'
-                  });
+                  };
                 } else if (preset.key === 'ocean') {
-                  setThemeColors({
+                  newThemeColors = {
                     ...themeColors,
                     primary: '#0077be',
                     secondary: '#5f9ea0',
@@ -207,9 +221,9 @@ const CMSManagement = () => {
                     surface: '#e6f3ff',
                     text: '#003d5b',
                     accent: '#00bfff'
-                  });
+                  };
                 } else if (preset.key === 'forest') {
-                  setThemeColors({
+                  newThemeColors = {
                     ...themeColors,
                     primary: '#228b22',
                     secondary: '#32cd32',
@@ -217,9 +231,9 @@ const CMSManagement = () => {
                     surface: '#e6ffe6',
                     text: '#006400',
                     accent: '#90ee90'
-                  });
+                  };
                 } else if (preset.key === 'sunset') {
-                  setThemeColors({
+                  newThemeColors = {
                     ...themeColors,
                     primary: '#ff6347',
                     secondary: '#ffa500',
@@ -227,9 +241,9 @@ const CMSManagement = () => {
                     surface: '#ffe4b5',
                     text: '#8b4513',
                     accent: '#ff7f50'
-                  });
+                  };
                 } else if (preset.key === 'purple') {
-                  setThemeColors({
+                  newThemeColors = {
                     ...themeColors,
                     primary: '#8a2be2',
                     secondary: '#9370db',
@@ -237,9 +251,9 @@ const CMSManagement = () => {
                     surface: '#e6d3ff',
                     text: '#4b0082',
                     accent: '#da70d6'
-                  });
+                  };
                 } else {
-                  setThemeColors({
+                  newThemeColors = {
                     primary: '#007bff',
                     secondary: '#6c757d',
                     success: '#28a745',
@@ -254,8 +268,17 @@ const CMSManagement = () => {
                     textSecondary: '#6c757d',
                     border: '#dee2e6',
                     accent: '#17a2b8'
-                  });
+                  };
                 }
+                
+                setThemeColors(newThemeColors);
+                
+                // Apply theme immediately
+                const root = document.documentElement;
+                Object.entries(newThemeColors).forEach(([key, value]) => {
+                  root.style.setProperty(`--color-${key}`, value);
+                });
+                
                 toast.success(`Applied ${preset.name} theme`);
               }}
               style={{
@@ -312,14 +335,20 @@ const CMSManagement = () => {
         <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
           <button
             onClick={() => {
-              // Apply theme to CSS variables
-              const root = document.documentElement;
-              Object.entries(themeColors).forEach(([key, value]) => {
-                root.style.setProperty(`--color-${key}`, value);
-              });
-              // Save to localStorage
-              localStorage.setItem('customTheme', JSON.stringify(themeColors));
-              toast.success('Theme applied and saved!');
+              try {
+                // Apply theme to CSS variables
+                const root = document.documentElement;
+                Object.entries(themeColors).forEach(([key, value]) => {
+                  root.style.setProperty(`--color-${key}`, value);
+                });
+                // Save to localStorage
+                localStorage.setItem('customTheme', JSON.stringify(themeColors));
+                console.log('Theme saved:', themeColors);
+                toast.success('Theme applied and saved!');
+              } catch (error) {
+                console.error('Error saving theme:', error);
+                toast.error('Failed to save theme');
+              }
             }}
             style={{
               background: '#28a745',
@@ -335,12 +364,24 @@ const CMSManagement = () => {
           </button>
           <button
             onClick={() => {
-              const savedTheme = localStorage.getItem('customTheme');
-              if (savedTheme) {
-                setThemeColors(JSON.parse(savedTheme));
-                toast.success('Theme loaded from saved settings');
-              } else {
-                toast.info('No saved theme found');
+              try {
+                const savedTheme = localStorage.getItem('customTheme');
+                if (savedTheme) {
+                  const parsedTheme = JSON.parse(savedTheme);
+                  setThemeColors(parsedTheme);
+                  // Also apply the loaded theme
+                  const root = document.documentElement;
+                  Object.entries(parsedTheme).forEach(([key, value]) => {
+                    root.style.setProperty(`--color-${key}`, value);
+                  });
+                  console.log('Theme loaded:', parsedTheme);
+                  toast.success('Theme loaded from saved settings');
+                } else {
+                  toast.info('No saved theme found');
+                }
+              } catch (error) {
+                console.error('Error loading theme:', error);
+                toast.error('Failed to load saved theme');
               }
             }}
             style={{
