@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axiosWithAuth from '../../utils/axiosWithAuth';
 import ClientHeader from '../../components/ClientHeader';
 
@@ -52,7 +54,7 @@ function GreenhouseSetup() {
 
   return (
     <div>
-      <ClientHeader />
+      <ClientHeader orgName="Greenhouse Setup" user={{}} />
       <div style={{ maxWidth: '600px', margin: 'auto' }}>
         <h2>Greenhouse Integration Setup</h2>
         <p>Enter and test your Greenhouse Harvest API key below:</p>
