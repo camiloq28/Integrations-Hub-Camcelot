@@ -58,8 +58,7 @@ const CMSManagement = () => {
         { id: 2, name: 'User Management', path: '/users', roles: ['admin'], order: 2, isActive: true },
         { id: 3, name: 'Plan Management', path: '/plans', roles: ['admin'], order: 3, isActive: true },
         { id: 4, name: 'Environment Variables', path: '/admin/env-vars', roles: ['admin'], order: 4, isActive: true },
-        { id: 5, name: 'CMS Management', path: '/admin/cms', roles: ['admin'], order: 5, isActive: true },
-        { id: 6, name: 'Workflow Management', path: '/admin/workflows', roles: ['admin'], order: 6, isActive: true }
+        { id: 5, name: 'CMS Management', path: '/admin/cms', roles: ['admin'], order: 5, isActive: true }
       ]
     },
     {
