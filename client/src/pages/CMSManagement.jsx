@@ -20,6 +20,23 @@ const CMSManagement = () => {
     isActive: true
   });
   const [editingItem, setEditingItem] = useState(null);
+  const [themeColors, setThemeColors] = useState({
+    primary: '#007bff',
+    secondary: '#6c757d',
+    success: '#28a745',
+    danger: '#dc3545',
+    warning: '#ffc107',
+    info: '#17a2b8',
+    light: '#f8f9fa',
+    dark: '#343a40',
+    background: '#ffffff',
+    surface: '#f8f9fa',
+    text: '#212529',
+    textSecondary: '#6c757d',
+    border: '#dee2e6',
+    accent: '#17a2b8'
+  });
+  const [activeTheme, setActiveTheme] = useState('default');
 
   // Available pages with their paths
   const availablePages = [
@@ -150,6 +167,247 @@ const CMSManagement = () => {
     setSelectedMenu(updatedMenus.find(m => m.id === selectedMenu.id));
     toast.success('Menu item status updated');
   };
+
+  const renderThemeSettings = () => (
+    <div style={{ maxWidth: '800px' }}>
+      <h3 style={{ marginBottom: '20px' }}>Theme Color Scheme Management</h3>
+      
+      {/* Theme Presets */}
+      <div style={{ marginBottom: '30px', padding: '20px', background: '#1e1e1e', borderRadius: '8px' }}>
+        <h4 style={{ color: 'white', marginBottom: '15px' }}>Theme Presets</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+          {[
+            { name: 'Default Light', key: 'default', colors: { primary: '#007bff', background: '#ffffff', text: '#212529' } },
+            { name: 'Dark Mode', key: 'dark', colors: { primary: '#0d6efd', background: '#121212', text: '#ffffff' } },
+            { name: 'Ocean Blue', key: 'ocean', colors: { primary: '#0077be', background: '#f0f8ff', text: '#003d5b' } },
+            { name: 'Forest Green', key: 'forest', colors: { primary: '#228b22', background: '#f0fff0', text: '#006400' } },
+            { name: 'Sunset Orange', key: 'sunset', colors: { primary: '#ff6347', background: '#fff8dc', text: '#8b4513' } },
+            { name: 'Purple Dream', key: 'purple', colors: { primary: '#8a2be2', background: '#f8f0ff', text: '#4b0082' } }
+          ].map(preset => (
+            <button
+              key={preset.key}
+              onClick={() => {
+                setActiveTheme(preset.key);
+                if (preset.key === 'dark') {
+                  setThemeColors({
+                    ...themeColors,
+                    primary: '#0d6efd',
+                    background: '#121212',
+                    surface: '#1e1e1e',
+                    text: '#ffffff',
+                    textSecondary: '#adb5bd',
+                    border: '#495057'
+                  });
+                } else if (preset.key === 'ocean') {
+                  setThemeColors({
+                    ...themeColors,
+                    primary: '#0077be',
+                    secondary: '#5f9ea0',
+                    background: '#f0f8ff',
+                    surface: '#e6f3ff',
+                    text: '#003d5b',
+                    accent: '#00bfff'
+                  });
+                } else if (preset.key === 'forest') {
+                  setThemeColors({
+                    ...themeColors,
+                    primary: '#228b22',
+                    secondary: '#32cd32',
+                    background: '#f0fff0',
+                    surface: '#e6ffe6',
+                    text: '#006400',
+                    accent: '#90ee90'
+                  });
+                } else if (preset.key === 'sunset') {
+                  setThemeColors({
+                    ...themeColors,
+                    primary: '#ff6347',
+                    secondary: '#ffa500',
+                    background: '#fff8dc',
+                    surface: '#ffe4b5',
+                    text: '#8b4513',
+                    accent: '#ff7f50'
+                  });
+                } else if (preset.key === 'purple') {
+                  setThemeColors({
+                    ...themeColors,
+                    primary: '#8a2be2',
+                    secondary: '#9370db',
+                    background: '#f8f0ff',
+                    surface: '#e6d3ff',
+                    text: '#4b0082',
+                    accent: '#da70d6'
+                  });
+                } else {
+                  setThemeColors({
+                    primary: '#007bff',
+                    secondary: '#6c757d',
+                    success: '#28a745',
+                    danger: '#dc3545',
+                    warning: '#ffc107',
+                    info: '#17a2b8',
+                    light: '#f8f9fa',
+                    dark: '#343a40',
+                    background: '#ffffff',
+                    surface: '#f8f9fa',
+                    text: '#212529',
+                    textSecondary: '#6c757d',
+                    border: '#dee2e6',
+                    accent: '#17a2b8'
+                  });
+                }
+                toast.success(`Applied ${preset.name} theme`);
+              }}
+              style={{
+                padding: '15px',
+                background: activeTheme === preset.key ? preset.colors.primary : '#333',
+                color: activeTheme === preset.key ? 'white' : '#ccc',
+                border: `2px solid ${activeTheme === preset.key ? preset.colors.primary : '#555'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{preset.name}</div>
+              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center' }}>
+                <div style={{ width: '12px', height: '12px', background: preset.colors.primary, borderRadius: '50%' }}></div>
+                <div style={{ width: '12px', height: '12px', background: preset.colors.background, border: '1px solid #ccc', borderRadius: '50%' }}></div>
+                <div style={{ width: '12px', height: '12px', background: preset.colors.text, borderRadius: '50%' }}></div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Custom Color Editor */}
+      <div style={{ padding: '20px', background: '#1e1e1e', borderRadius: '8px', marginBottom: '20px' }}>
+        <h4 style={{ color: 'white', marginBottom: '20px' }}>Custom Color Editor</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+          {Object.entries(themeColors).map(([colorKey, colorValue]) => (
+            <div key={colorKey} style={{ background: '#2a2a2a', padding: '15px', borderRadius: '6px' }}>
+              <label style={{ color: 'white', display: 'block', marginBottom: '8px', fontWeight: 'bold', textTransform: 'capitalize' }}>
+                {colorKey.replace(/([A-Z])/g, ' $1').trim()}
+              </label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="color"
+                  value={colorValue}
+                  onChange={(e) => setThemeColors({ ...themeColors, [colorKey]: e.target.value })}
+                  style={{ width: '50px', height: '40px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                />
+                <input
+                  type="text"
+                  value={colorValue}
+                  onChange={(e) => setThemeColors({ ...themeColors, [colorKey]: e.target.value })}
+                  style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #555', background: '#333', color: 'white' }}
+                />
+              </div>
+              <div style={{ marginTop: '8px', padding: '8px', background: colorValue, borderRadius: '4px', textAlign: 'center', color: colorKey.includes('text') || colorKey.includes('dark') ? 'white' : 'black', fontSize: '12px' }}>
+                Preview
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => {
+              // Apply theme to CSS variables
+              const root = document.documentElement;
+              Object.entries(themeColors).forEach(([key, value]) => {
+                root.style.setProperty(`--color-${key}`, value);
+              });
+              // Save to localStorage
+              localStorage.setItem('customTheme', JSON.stringify(themeColors));
+              toast.success('Theme applied and saved!');
+            }}
+            style={{
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Apply & Save Theme
+          </button>
+          <button
+            onClick={() => {
+              const savedTheme = localStorage.getItem('customTheme');
+              if (savedTheme) {
+                setThemeColors(JSON.parse(savedTheme));
+                toast.success('Theme loaded from saved settings');
+              } else {
+                toast.info('No saved theme found');
+              }
+            }}
+            style={{
+              background: '#17a2b8',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Load Saved Theme
+          </button>
+          <button
+            onClick={() => {
+              setThemeColors({
+                primary: '#007bff',
+                secondary: '#6c757d',
+                success: '#28a745',
+                danger: '#dc3545',
+                warning: '#ffc107',
+                info: '#17a2b8',
+                light: '#f8f9fa',
+                dark: '#343a40',
+                background: '#ffffff',
+                surface: '#f8f9fa',
+                text: '#212529',
+                textSecondary: '#6c757d',
+                border: '#dee2e6',
+                accent: '#17a2b8'
+              });
+              toast.info('Reset to default colors');
+            }}
+            style={{
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+
+      {/* Live Preview */}
+      <div style={{ padding: '20px', background: themeColors.background, borderRadius: '8px', border: `2px solid ${themeColors.border}` }}>
+        <h4 style={{ color: themeColors.text, marginBottom: '15px' }}>Live Preview</h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+          <button style={{ background: themeColors.primary, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Primary Button</button>
+          <button style={{ background: themeColors.secondary, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Secondary Button</button>
+          <button style={{ background: themeColors.success, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Success Button</button>
+          <button style={{ background: themeColors.danger, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Danger Button</button>
+          <button style={{ background: themeColors.warning, color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>Warning Button</button>
+        </div>
+        <div style={{ padding: '15px', background: themeColors.surface, borderRadius: '6px', border: `1px solid ${themeColors.border}` }}>
+          <h5 style={{ color: themeColors.text, margin: '0 0 10px 0' }}>Card Example</h5>
+          <p style={{ color: themeColors.textSecondary, margin: '0 0 10px 0' }}>This is how text will look with your current theme settings.</p>
+          <a href="#" style={{ color: themeColors.accent, textDecoration: 'none' }}>Accent Link</a>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderMenuManagement = () => (
     <div style={{ display: 'flex', gap: '20px', height: '600px' }}>
@@ -382,6 +640,8 @@ const CMSManagement = () => {
     switch (activeSection) {
       case 'menu-management':
         return renderMenuManagement();
+      case 'theme-settings':
+        return renderThemeSettings();
       default:
         return <div>Select a section from the sidebar</div>;
     }
@@ -418,6 +678,23 @@ const CMSManagement = () => {
               }}
             >
               📋 Menu Management
+            </button>
+            <button
+              onClick={() => setActiveSection('theme-settings')}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '12px',
+                margin: '5px 0',
+                background: activeSection === 'theme-settings' ? '#007bff' : 'transparent',
+                color: 'white',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              🎨 Theme Settings
             </button>
             <button
               onClick={() => toast.info('Page Management - Coming soon!')}

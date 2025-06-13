@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -26,6 +26,22 @@ function ClientLayout({ children }) {
 }
 
 function App() {
+  useEffect(() => {
+    // Load saved theme on app start
+    const savedTheme = localStorage.getItem('customTheme');
+    if (savedTheme) {
+      try {
+        const themeColors = JSON.parse(savedTheme);
+        const root = document.documentElement;
+        Object.entries(themeColors).forEach(([key, value]) => {
+          root.style.setProperty(`--color-${key}`, value);
+        });
+      } catch (error) {
+        console.error('Failed to load saved theme:', error);
+      }
+    }
+  }, []);
+
   return (
     <Router>
       <Routes>
