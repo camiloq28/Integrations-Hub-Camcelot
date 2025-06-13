@@ -15,11 +15,38 @@ const CMSManagement = () => {
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
     path: '',
-    role: '',
+    roles: [],
     order: 0,
     isActive: true
   });
   const [editingItem, setEditingItem] = useState(null);
+
+  // Available pages with their paths
+  const availablePages = [
+    { title: 'Admin Dashboard', path: '/admin' },
+    { title: 'User Management', path: '/users' },
+    { title: 'Plan Management', path: '/plans' },
+    { title: 'Environment Variables', path: '/admin/env-vars' },
+    { title: 'CMS Management', path: '/admin/cms' },
+    { title: 'Workflow Management', path: '/admin/workflows' },
+    { title: 'Client Portal', path: '/client' },
+    { title: 'Client Workflows', path: '/client/workflows' },
+    { title: 'Organization Users', path: '/org/:orgId/users' },
+    { title: 'User Profile', path: '/profile' },
+    { title: 'Gmail Integration', path: '/client/integrations/gmail' },
+    { title: 'Greenhouse Integration', path: '/client/integrations/greenhouse' },
+    { title: 'Greenhouse Dashboard', path: '/client/integrations/greenhouse/dashboard' },
+    { title: 'Bamboo HR Integration', path: '/client/integrations/bamboo-hr' }
+  ];
+
+  // Available roles
+  const availableRoles = [
+    { value: 'admin', label: 'Admin' },
+    { value: 'platform_editor', label: 'Platform Editor' },
+    { value: 'client_admin', label: 'Client Admin' },
+    { value: 'client_editor', label: 'Client Editor' },
+    { value: 'client_user', label: 'Client User' }
+  ];
 
   // Default menu structure
   const defaultMenus = [
@@ -27,21 +54,21 @@ const CMSManagement = () => {
       id: 'admin-menu',
       name: 'Admin Menu',
       items: [
-        { id: 1, name: 'Dashboard', path: '/admin', role: 'admin', order: 1, isActive: true },
-        { id: 2, name: 'User Management', path: '/users', role: 'admin', order: 2, isActive: true },
-        { id: 3, name: 'Plan Management', path: '/plans', role: 'admin', order: 3, isActive: true },
-        { id: 4, name: 'Environment Variables', path: '/admin/env-vars', role: 'admin', order: 4, isActive: true },
-        { id: 5, name: 'CMS Management', path: '/admin/cms', role: 'admin', order: 5, isActive: true }
+        { id: 1, name: 'Dashboard', path: '/admin', roles: ['admin'], order: 1, isActive: true },
+        { id: 2, name: 'User Management', path: '/users', roles: ['admin'], order: 2, isActive: true },
+        { id: 3, name: 'Plan Management', path: '/plans', roles: ['admin'], order: 3, isActive: true },
+        { id: 4, name: 'Environment Variables', path: '/admin/env-vars', roles: ['admin'], order: 4, isActive: true },
+        { id: 5, name: 'CMS Management', path: '/admin/cms', roles: ['admin'], order: 5, isActive: true }
       ]
     },
     {
       id: 'client-menu',
       name: 'Client Menu',
       items: [
-        { id: 1, name: 'Portal Home', path: '/client', role: 'client_admin', order: 1, isActive: true },
-        { id: 2, name: 'Workflows', path: '/client/workflows', role: 'client_admin', order: 2, isActive: true },
-        { id: 3, name: 'User Management', path: '/org/:orgId/users', role: 'client_admin', order: 3, isActive: true },
-        { id: 4, name: 'Profile', path: '/profile', role: 'client_user', order: 4, isActive: true }
+        { id: 1, name: 'Portal Home', path: '/client', roles: ['client_admin', 'client_editor', 'client_user'], order: 1, isActive: true },
+        { id: 2, name: 'Workflows', path: '/client/workflows', roles: ['client_admin'], order: 2, isActive: true },
+        { id: 3, name: 'User Management', path: '/org/:orgId/users', roles: ['client_admin'], order: 3, isActive: true },
+        { id: 4, name: 'Profile', path: '/profile', roles: ['client_admin', 'client_editor', 'client_user'], order: 4, isActive: true }
       ]
     }
   ];
@@ -66,8 +93,8 @@ const CMSManagement = () => {
   };
 
   const saveMenuItem = () => {
-    if (!newMenuItem.name || !newMenuItem.path) {
-      toast.error('Please fill in all required fields');
+    if (!newMenuItem.name || !newMenuItem.path || newMenuItem.roles.length === 0) {
+      toast.error('Please fill in all required fields including at least one role');
       return;
     }
 
@@ -83,7 +110,7 @@ const CMSManagement = () => {
 
     setMenus(updatedMenus);
     setSelectedMenu(updatedMenus.find(m => m.id === selectedMenu.id));
-    setNewMenuItem({ name: '', path: '', role: '', order: 0, isActive: true });
+    setNewMenuItem({ name: '', path: '', roles: [], order: 0, isActive: true });
     setEditingItem(null);
     toast.success(editingItem ? 'Menu item updated' : 'Menu item added');
   };
@@ -167,24 +194,24 @@ const CMSManagement = () => {
                   onChange={(e) => setNewMenuItem({ ...newMenuItem, name: e.target.value })}
                   style={{ padding: '8px', borderRadius: '4px', border: 'none' }}
                 />
-                <input
-                  type="text"
-                  placeholder="Path (e.g., /admin)"
-                  value={newMenuItem.path}
-                  onChange={(e) => setNewMenuItem({ ...newMenuItem, path: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: 'none' }}
-                />
                 <select
-                  value={newMenuItem.role}
-                  onChange={(e) => setNewMenuItem({ ...newMenuItem, role: e.target.value })}
+                  value={newMenuItem.path}
+                  onChange={(e) => {
+                    const selectedPage = availablePages.find(page => page.path === e.target.value);
+                    setNewMenuItem({ 
+                      ...newMenuItem, 
+                      path: e.target.value,
+                      name: newMenuItem.name || selectedPage?.title || ''
+                    });
+                  }}
                   style={{ padding: '8px', borderRadius: '4px', border: 'none' }}
                 >
-                  <option value="">Select Role</option>
-                  <option value="admin">Admin</option>
-                  <option value="platform_editor">Platform Editor</option>
-                  <option value="client_admin">Client Admin</option>
-                  <option value="client_editor">Client Editor</option>
-                  <option value="client_user">Client User</option>
+                  <option value="">Select Page</option>
+                  {availablePages.map(page => (
+                    <option key={page.path} value={page.path}>
+                      {page.title} ({page.path})
+                    </option>
+                  ))}
                 </select>
                 <input
                   type="number"
@@ -193,6 +220,42 @@ const CMSManagement = () => {
                   onChange={(e) => setNewMenuItem({ ...newMenuItem, order: parseInt(e.target.value) })}
                   style={{ padding: '8px', borderRadius: '4px', border: 'none' }}
                 />
+                <input
+                  type="text"
+                  placeholder="Custom Path (optional)"
+                  value={newMenuItem.path}
+                  onChange={(e) => setNewMenuItem({ ...newMenuItem, path: e.target.value })}
+                  style={{ padding: '8px', borderRadius: '4px', border: 'none' }}
+                />
+              </div>
+              
+              {/* Multi-role selection */}
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ color: 'white', marginBottom: '5px', display: 'block' }}>Select Roles:</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '10px', background: '#333', borderRadius: '4px' }}>
+                  {availableRoles.map(role => (
+                    <label key={role.value} style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <input
+                        type="checkbox"
+                        checked={newMenuItem.roles.includes(role.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewMenuItem({ 
+                              ...newMenuItem, 
+                              roles: [...newMenuItem.roles, role.value] 
+                            });
+                          } else {
+                            setNewMenuItem({ 
+                              ...newMenuItem, 
+                              roles: newMenuItem.roles.filter(r => r !== role.value) 
+                            });
+                          }
+                        }}
+                      />
+                      {role.label}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
@@ -212,7 +275,7 @@ const CMSManagement = () => {
                   <button
                     onClick={() => {
                       setEditingItem(null);
-                      setNewMenuItem({ name: '', path: '', role: '', order: 0, isActive: true });
+                      setNewMenuItem({ name: '', path: '', roles: [], order: 0, isActive: true });
                     }}
                     style={{
                       background: '#6c757d',
@@ -240,7 +303,7 @@ const CMSManagement = () => {
                     <tr style={{ borderBottom: '1px solid #444' }}>
                       <th style={{ textAlign: 'left', padding: '10px' }}>Name</th>
                       <th style={{ textAlign: 'left', padding: '10px' }}>Path</th>
-                      <th style={{ textAlign: 'left', padding: '10px' }}>Role</th>
+                      <th style={{ textAlign: 'left', padding: '10px' }}>Roles</th>
                       <th style={{ textAlign: 'left', padding: '10px' }}>Order</th>
                       <th style={{ textAlign: 'left', padding: '10px' }}>Status</th>
                       <th style={{ textAlign: 'left', padding: '10px' }}>Actions</th>
@@ -251,7 +314,9 @@ const CMSManagement = () => {
                       <tr key={item.id} style={{ borderBottom: '1px solid #333' }}>
                         <td style={{ padding: '10px' }}>{item.name}</td>
                         <td style={{ padding: '10px' }}>{item.path}</td>
-                        <td style={{ padding: '10px' }}>{item.role}</td>
+                        <td style={{ padding: '10px' }}>
+                          {item.roles ? item.roles.join(', ') : item.role || 'No roles'}
+                        </td>
                         <td style={{ padding: '10px' }}>{item.order}</td>
                         <td style={{ padding: '10px' }}>
                           <span style={{ color: item.isActive ? 'green' : 'red' }}>
