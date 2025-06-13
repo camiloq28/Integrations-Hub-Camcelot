@@ -344,4 +344,72 @@ router.post('/test/:accountName', protect, hasRole('client_admin', 'client_edito
   }
 });
 
+// Send test email
+router.post('/send-test-email', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
+  try {
+    const { accountName, to, subject, body } = req.body;
+
+    if (!accountName || !to || !subject || !body) {
+      return res.status(400).json({ message: 'Missing required fields: accountName, to, subject, body' });
+    }
+
+    // Get credentials for the specified account
+    const creds = await IntegrationCredential.findOne({
+      orgId: req.user.orgId,
+      integration: 'gmail',
+      accountName: accountName
+    });
+
+    if (!creds) {
+      return res.status(404).json({ message: 'Gmail account not found' });
+    }
+
+    const oauth2Client = getGmailOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: creds.accessToken,
+      refresh_token: creds.refreshToken
+    });
+
+    // Create Gmail API instance
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    // Create email message
+    const emailMessage = [
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      body
+    ].join('\n');
+
+    // Encode the email message
+    const encodedMessage = Buffer.from(emailMessage)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    // Send the email
+    const result = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      messageId: result.data.id,
+      message: `Test email sent successfully from ${accountName} to ${to}` 
+    });
+  } catch (err) {
+    console.error('❌ Error sending test email:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send test email',
+      error: err.message 
+    });
+  }
+});
+
 module.exports = router;

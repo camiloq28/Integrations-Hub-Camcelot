@@ -10,6 +10,13 @@ const GmailSetup = () => {
   const [loading, setLoading] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showTestEmailForm, setShowTestEmailForm] = useState(false);
+  const [testEmailData, setTestEmailData] = useState({
+    accountName: '',
+    to: '',
+    subject: 'Test Email from Gmail Integration',
+    body: 'This is a test email sent from your Gmail integration setup. If you received this, your Gmail integration is working correctly!'
+  });
 
   useEffect(() => {
     // Check for OAuth callback results
@@ -109,6 +116,42 @@ const GmailSetup = () => {
       }));
     } catch (err) {
       toast.error('Error deleting account');
+    }
+  };
+
+  const sendTestEmail = async () => {
+    if (!testEmailData.accountName || !testEmailData.to || !testEmailData.subject || !testEmailData.body) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(testEmailData.to)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const axiosAuth = axiosWithAuth();
+      const response = await axiosAuth.post('/api/integrations/gmail/send-test-email', testEmailData);
+      
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setShowTestEmailForm(false);
+        setTestEmailData({
+          accountName: '',
+          to: '',
+          subject: 'Test Email from Gmail Integration',
+          body: 'This is a test email sent from your Gmail integration setup. If you received this, your Gmail integration is working correctly!'
+        });
+      }
+    } catch (err) {
+      console.error('Error sending test email:', err);
+      toast.error(err.response?.data?.message || 'Failed to send test email');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -229,6 +272,131 @@ const GmailSetup = () => {
           </div>
         )}
       </div>
+
+      {accounts.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <h3>Send Test Email</h3>
+          {!showTestEmailForm ? (
+            <button 
+              onClick={() => setShowTestEmailForm(true)}
+              style={{ backgroundColor: '#28a745', color: 'white', padding: '10px 20px' }}
+            >
+              Send Test Email
+            </button>
+          ) : (
+            <div style={{ border: '1px solid #ccc', padding: '20px', borderRadius: '5px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label>Select Gmail Account:</label>
+                <select
+                  value={testEmailData.accountName}
+                  onChange={(e) => setTestEmailData({ ...testEmailData, accountName: e.target.value })}
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    marginTop: '5px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }}
+                  required
+                >
+                  <option value="">Choose an account...</option>
+                  {accounts.map((account) => (
+                    <option key={account.accountName} value={account.accountName}>
+                      {account.accountName} ({account.metadata?.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label>Send To (Email Address): *</label>
+                <input
+                  type="email"
+                  value={testEmailData.to}
+                  onChange={(e) => setTestEmailData({ ...testEmailData, to: e.target.value })}
+                  placeholder="recipient@example.com"
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    marginTop: '5px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label>Subject: *</label>
+                <input
+                  type="text"
+                  value={testEmailData.subject}
+                  onChange={(e) => setTestEmailData({ ...testEmailData, subject: e.target.value })}
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    marginTop: '5px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label>Message Body: *</label>
+                <textarea
+                  value={testEmailData.body}
+                  onChange={(e) => setTestEmailData({ ...testEmailData, body: e.target.value })}
+                  rows="4"
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    marginTop: '5px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    resize: 'vertical'
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={sendTestEmail}
+                  disabled={loading}
+                  style={{ 
+                    backgroundColor: '#28a745', 
+                    color: 'white', 
+                    padding: '10px 20px',
+                    opacity: loading ? 0.6 : 1
+                  }}
+                >
+                  {loading ? 'Sending...' : 'Send Test Email'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTestEmailForm(false);
+                    setTestEmailData({
+                      accountName: '',
+                      to: '',
+                      subject: 'Test Email from Gmail Integration',
+                      body: 'This is a test email sent from your Gmail integration setup. If you received this, your Gmail integration is working correctly!'
+                    });
+                  }}
+                  style={{ 
+                    backgroundColor: '#6c757d', 
+                    color: 'white', 
+                    padding: '10px 20px'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {accounts.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
