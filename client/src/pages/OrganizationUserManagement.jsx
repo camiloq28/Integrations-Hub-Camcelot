@@ -15,6 +15,7 @@ function OrganizationUserManagement() {
   const [role, setRole] = useState('');
   const [orgId, setOrgId] = useState('');
   const [availablePlans, setAvailablePlans] = useState([]);
+    const [user, setUser] = useState(null);
 
   const [newUser, setNewUser] = useState({
     firstName: '',
@@ -31,8 +32,19 @@ function OrganizationUserManagement() {
 
   useEffect(() => {
     const storedRole = localStorage.getItem('role');
+          const storedUserRaw = localStorage.getItem('user');
+
+
     const storedOrgId = localStorage.getItem('orgId');
     setRole(storedRole);
+      if (storedUserRaw) {
+      try {
+        const storedUser = JSON.parse(storedUserRaw);
+        setUser(storedUser);
+      } catch (err) {
+        console.warn("Failed to parse user from localStorage");
+      }
+    }
 
     const resolvedOrgId = (storedRole === 'admin' || storedRole === 'platform_editor') ? paramOrgId : storedOrgId;
     setOrgId(resolvedOrgId);
@@ -226,7 +238,7 @@ function OrganizationUserManagement() {
 
   return (
     <div>
-      <ClientHeader orgName={`${orgName} Client Portal`}  />
+      <ClientHeader orgName={`${orgName} Client Portal`}  user={user}/>
       <div style={{ maxWidth: '900px', margin: 'auto' }}>
         <h2>{orgName || 'Organization'} Users</h2>
 
