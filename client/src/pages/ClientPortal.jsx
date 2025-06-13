@@ -77,13 +77,9 @@ const ClientPortal = () => {
     // Listen for integration status changes
     const handleIntegrationChange = (event) => {
       console.log('🔄 Integration status changed:', event.detail);
-      // Get fresh orgData from state
-      const storedUserRaw = localStorage.getItem('user');
-      if (storedUserRaw) {
-        const axiosAuth = axiosWithAuth();
-        axiosAuth.get('/api/client/portal').then(res => {
-          fetchIntegrationStatus(res.data.allowedIntegrations);
-        }).catch(err => console.error('Error refreshing integration status:', err));
+      // Use existing orgData to refresh integration status
+      if (orgData?.allowedIntegrations) {
+        fetchIntegrationStatus(orgData.allowedIntegrations);
       }
     };
 
