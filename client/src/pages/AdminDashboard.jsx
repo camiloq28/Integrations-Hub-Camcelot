@@ -7,9 +7,9 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   return (
-    <div>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', color: 'white' }}>
       <AdminHeader />
-      <div style={{ maxWidth: '800px', margin: 'auto' }}>
+      <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
 
       <h3>Overview</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
