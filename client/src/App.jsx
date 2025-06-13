@@ -43,9 +43,9 @@ function App() {
         <Route path="/client" element={<ClientLayout><ClientPortal /></ClientLayout>} />
         <Route path="/client/workflows" element={<ClientLayout><WorkflowManagement /></ClientLayout>} />
         <Route path="/client/workflows/edit/:id" element={<ClientLayout><WorkflowBuilder /></ClientLayout>} />
-        <Route path="/client/integrations/greenhouse" element={<ClientLayout><GreenhouseSetup /></ClientLayout>} />
-        <Route path="/client/integrations/greenhouse/dashboard" element={<GreenhouseDashboard />} />
         <Route path="/client/integrations/gmail" element={<ClientLayout><GmailSetup /></ClientLayout>} />
+        <Route path="/client/integrations/gmail/*" element={<ClientLayout><GmailSetup /></ClientLayout>} />
+        <Route path="/client/integrations/greenhouse" element={<ClientLayout><GreenhouseSetup /></ClientLayout>} />
         <Route path="/client/integrations/bamboo-hr" element={<ClientLayout><BambooHRSetup /></ClientLayout>} />
 
         {/* 🔚 Fallback route */}
