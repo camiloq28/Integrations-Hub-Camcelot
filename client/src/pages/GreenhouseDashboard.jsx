@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axiosWithAuth from '../utils/axiosWithAuth';
 import ClientHeader from '../components/ClientHeader';
 
@@ -104,9 +106,22 @@ const GreenhouseDashboard = () => {
     </div>
 );
 
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage');
+      }
+    }
+  }, []);
+
   return (
     <div>
-      <ClientHeader orgName="Greenhouse Integration Dashboard" user={{}} />
+      <ClientHeader orgName="Greenhouse Integration Dashboard" user={user} />
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">Greenhouse Integration</h1>
 

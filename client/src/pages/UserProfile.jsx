@@ -135,10 +135,10 @@ function UserProfile() {
 
   return (
     <div>
-      {user?.role === 'admin' ? (
+      {(role === 'admin' || role === 'platform_editor' || role === 'platform_viewer') ? (
         <AdminHeader />
       ) : (
-        <ClientHeader orgName="User Profile" user={user} />
+        <ClientHeader orgName="User Profile" user={user || { role, email, firstName, lastName, organization }} />
       )}
       <div style={{ maxWidth: '600px', margin: 'auto' }}>
         <h2>User Profile</h2>
