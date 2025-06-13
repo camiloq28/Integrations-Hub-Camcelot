@@ -25,17 +25,25 @@ app.use(cors());
 app.use(express.json());
 
 // Connect routes
-
+console.log('🔧 [SERVER_DEBUG] Registering routes...');
 app.use('/api/auth', authRoutes);
+console.log('✅ [SERVER_DEBUG] Auth routes registered');
 app.use('/api/admin', adminRoutes);
+console.log('✅ [SERVER_DEBUG] Admin routes registered');
 app.use('/api/client', clientRoutes);
-app.use('/api/plan', planRoutes); 
+console.log('✅ [SERVER_DEBUG] Client routes registered');
+app.use('/api/plan', planRoutes);
+console.log('✅ [SERVER_DEBUG] Plans routes registered');
 app.use('/api', workflowRoutes);
+console.log('✅ [SERVER_DEBUG] Workflows routes registered');
 app.use('/api', usersRoute);
+console.log('✅ [SERVER_DEBUG] Users routes registered');
 app.use('/api/integrations', integrationRoutes);
+console.log('✅ [SERVER_DEBUG] Integrations routes registered');
 app.use('/api/integrations/meta', metaRoutes);
 app.use('/api/integrations/greenhouse', greenhouseRoutes);
 app.use('/api/webhooks', webhookRoutes);
+console.log('✅ [SERVER_DEBUG] Webhooks routes registered');
 app.get('/', (req, res) => {
   res.send('API is running...');
 });

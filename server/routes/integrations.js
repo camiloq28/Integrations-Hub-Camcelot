@@ -110,8 +110,13 @@ router.use('/meta', require('./integrations/meta'));
 const metaRoutes = require('./integrations/meta');
 router.use('/meta', metaRoutes);
 
-// ✅ Mount integration-specific routes
+// Integration-specific routes
+console.log('🔧 [INTEGRATIONS_DEBUG] Loading integration routes...');
 router.use('/gmail', require('./integrations/gmail'));
+console.log('✅ [INTEGRATIONS_DEBUG] Gmail routes loaded');
 router.use('/bamboohr', require('./integrations/bamboohr'));
+console.log('✅ [INTEGRATIONS_DEBUG] BambooHR routes loaded');
+router.use('/meta', require('./integrations/meta'));
+console.log('✅ [INTEGRATIONS_DEBUG] Meta routes loaded');
 
 module.exports = router;

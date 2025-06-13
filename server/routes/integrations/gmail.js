@@ -20,9 +20,21 @@ const getGmailOAuth2Client = () => {
 
 // Generate OAuth URL
 router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req, res) => {
+  console.log('🔍 [GMAIL_DEBUG] OAuth URL generation started');
+  console.log('🔍 [GMAIL_DEBUG] User:', req.user?.email, 'OrgId:', req.user?.orgId);
+  console.log('🔍 [GMAIL_DEBUG] Query params:', req.query);
+
   try {
     // Validate environment variables
-    if (!process.env.GMAIL_CLIENT_ID || !process.env.GMAIL_CLIENT_SECRET || !process.env.BASE_URL) {
+    const hasClientId = !!process.env.GMAIL_CLIENT_ID;
+    const hasClientSecret = !!process.env.GMAIL_CLIENT_SECRET;
+    const hasBaseUrl = !!process.env.BASE_URL;
+
+    console.log('🔍 [GMAIL_DEBUG] Environment check - ClientID:', hasClientId, 'ClientSecret:', hasClientSecret, 'BaseURL:', hasBaseUrl);
+    console.log('🔍 [GMAIL_DEBUG] BaseURL value:', process.env.BASE_URL);
+
+    if (!hasClientId || !hasClientSecret || !hasBaseUrl) {
+      console.error('❌ [GMAIL_DEBUG] Missing environment variables');
       return res.status(500).json({ 
         message: 'Gmail OAuth not configured. Please set GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, and BASE_URL environment variables.' 
       });
@@ -30,10 +42,14 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
 
     const { accountName } = req.query;
     if (!accountName) {
+      console.error('❌ [GMAIL_DEBUG] Missing account name');
       return res.status(400).json({ message: 'Account name is required' });
     }
 
+    console.log('✅ [GMAIL_DEBUG] Account name provided:', accountName);
+
     const oauth2Client = getGmailOAuth2Client();
+    console.log('✅ [GMAIL_DEBUG] OAuth2 client created');
 
     const scopes = [
       'https://www.googleapis.com/auth/userinfo.email',
@@ -47,16 +63,29 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
       accountName: accountName
     });
 
-    const authUrl = oauth2Client.generateAuthUrl({
+    console.log('🔍 [GMAIL_DEBUG] State created:', state);
+    console.log('🔍 [GMAIL_DEBUG] Scopes:', scopes);
+
+    const authUrlParams = {
       access_type: 'offline',
       scope: scopes,
       state: state,
-      prompt: 'consent'
-    });
+      prompt: 'consent',
+      include_granted_scopes: true
+    };
+
+    console.log('🔍 [GMAIL_DEBUG] Auth URL params:', authUrlParams);
+
+    const authUrl = oauth2Client.generateAuthUrl(authUrlParams);
+
+    console.log('✅ [GMAIL_DEBUG] Auth URL generated successfully');
+    console.log('🔍 [GMAIL_DEBUG] Auth URL length:', authUrl.length);
+    console.log('🔍 [GMAIL_DEBUG] Auth URL (first 200 chars):', authUrl.substring(0, 200) + '...');
 
     res.json({ authUrl });
   } catch (err) {
-    console.error('❌ OAuth URL generation error:', err);
+    console.error('❌ [GMAIL_DEBUG] OAuth URL generation error:', err.message);
+    console.error('❌ [GMAIL_DEBUG] Full error stack:', err.stack);
     res.status(500).json({ message: 'Failed to generate OAuth URL', error: err.message });
   }
 });
