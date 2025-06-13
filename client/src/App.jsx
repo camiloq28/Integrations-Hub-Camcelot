@@ -15,6 +15,7 @@ import GreenhouseDashboard from './pages/GreenhouseDashboard';
 import GmailSetup from './pages/integrations/GmailSetup';
 import BambooHRSetup from './pages/integrations/BambooHRSetup';
 import CMSManagement from './pages/CMSManagement';
+import { loadAndApplyTheme } from './utils/themeUtils';
 
 function ClientLayout({ children }) {
   return (
@@ -27,22 +28,25 @@ function ClientLayout({ children }) {
 
 function App() {
   useEffect(() => {
-    // Load saved theme on app start
-    const savedTheme = localStorage.getItem('customTheme');
-    if (savedTheme) {
-      try {
-        const themeColors = JSON.parse(savedTheme);
+    // Load and apply saved theme on app start
+    loadAndApplyTheme();
+    
+    // Listen for theme changes from other components
+    const handleThemeChange = (event) => {
+      if (event.detail && event.detail.themeColors) {
+        console.log('Theme change detected, applying new theme');
         const root = document.documentElement;
-        Object.entries(themeColors).forEach(([key, value]) => {
+        Object.entries(event.detail.themeColors).forEach(([key, value]) => {
           root.style.setProperty(`--color-${key}`, value);
         });
-        console.log('Applied saved theme:', themeColors);
-      } catch (error) {
-        console.error('Failed to load saved theme:', error);
       }
-    } else {
-      console.log('No saved theme found, using default');
-    }
+    };
+
+    window.addEventListener('themeChanged', handleThemeChange);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+    };
   }, []);
 
   return (

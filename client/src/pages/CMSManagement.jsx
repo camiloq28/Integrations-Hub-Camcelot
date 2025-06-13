@@ -5,6 +5,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AdminHeader from '../components/AdminHeader';
 import axiosWithAuth from '../utils/axiosWithAuth';
+import { loadAndApplyTheme, saveAndApplyTheme, getDefaultTheme } from '../utils/themeUtils';
 
 const CMSManagement = () => {
   const navigate = useNavigate();
@@ -20,22 +21,7 @@ const CMSManagement = () => {
     isActive: true
   });
   const [editingItem, setEditingItem] = useState(null);
-  const [themeColors, setThemeColors] = useState({
-    primary: '#007bff',
-    secondary: '#6c757d',
-    success: '#28a745',
-    danger: '#dc3545',
-    warning: '#ffc107',
-    info: '#17a2b8',
-    light: '#f8f9fa',
-    dark: '#343a40',
-    background: '#ffffff',
-    surface: '#f8f9fa',
-    text: '#212529',
-    textSecondary: '#6c757d',
-    border: '#dee2e6',
-    accent: '#17a2b8'
-  });
+  const [themeColors, setThemeColors] = useState(getDefaultTheme());
   const [activeTheme, setActiveTheme] = useState('default');
 
   // Available pages with their paths
@@ -94,15 +80,10 @@ const CMSManagement = () => {
     fetchMenus();
     
     // Load saved theme when component mounts
-    const savedTheme = localStorage.getItem('customTheme');
+    const savedTheme = loadAndApplyTheme();
     if (savedTheme) {
-      try {
-        const parsedTheme = JSON.parse(savedTheme);
-        setThemeColors(parsedTheme);
-        console.log('CMS: Loaded saved theme on mount');
-      } catch (error) {
-        console.error('CMS: Failed to load saved theme on mount:', error);
-      }
+      setThemeColors(savedTheme);
+      console.log('CMS: Loaded saved theme on mount');
     }
   }, []);
 
@@ -272,12 +253,12 @@ const CMSManagement = () => {
                 }
                 
                 setThemeColors(newThemeColors);
+                saveAndApplyTheme(newThemeColors);
                 
-                // Apply theme immediately
-                const root = document.documentElement;
-                Object.entries(newThemeColors).forEach(([key, value]) => {
-                  root.style.setProperty(`--color-${key}`, value);
-                });
+                // Dispatch theme change event
+                window.dispatchEvent(new CustomEvent('themeChanged', {
+                  detail: { themeColors: newThemeColors }
+                }));
                 
                 toast.success(`Applied ${preset.name} theme`);
               }}
@@ -335,18 +316,14 @@ const CMSManagement = () => {
         <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
           <button
             onClick={() => {
-              try {
-                // Apply theme to CSS variables
-                const root = document.documentElement;
-                Object.entries(themeColors).forEach(([key, value]) => {
-                  root.style.setProperty(`--color-${key}`, value);
-                });
-                // Save to localStorage
-                localStorage.setItem('customTheme', JSON.stringify(themeColors));
-                console.log('Theme saved:', themeColors);
+              const success = saveAndApplyTheme(themeColors);
+              if (success) {
+                // Dispatch theme change event to notify other components
+                window.dispatchEvent(new CustomEvent('themeChanged', {
+                  detail: { themeColors }
+                }));
                 toast.success('Theme applied and saved!');
-              } catch (error) {
-                console.error('Error saving theme:', error);
+              } else {
                 toast.error('Failed to save theme');
               }
             }}
@@ -364,24 +341,16 @@ const CMSManagement = () => {
           </button>
           <button
             onClick={() => {
-              try {
-                const savedTheme = localStorage.getItem('customTheme');
-                if (savedTheme) {
-                  const parsedTheme = JSON.parse(savedTheme);
-                  setThemeColors(parsedTheme);
-                  // Also apply the loaded theme
-                  const root = document.documentElement;
-                  Object.entries(parsedTheme).forEach(([key, value]) => {
-                    root.style.setProperty(`--color-${key}`, value);
-                  });
-                  console.log('Theme loaded:', parsedTheme);
-                  toast.success('Theme loaded from saved settings');
-                } else {
-                  toast.info('No saved theme found');
-                }
-              } catch (error) {
-                console.error('Error loading theme:', error);
-                toast.error('Failed to load saved theme');
+              const savedTheme = loadAndApplyTheme();
+              if (savedTheme) {
+                setThemeColors(savedTheme);
+                // Dispatch theme change event
+                window.dispatchEvent(new CustomEvent('themeChanged', {
+                  detail: { themeColors: savedTheme }
+                }));
+                toast.success('Theme loaded from saved settings');
+              } else {
+                toast.info('No saved theme found');
               }
             }}
             style={{
@@ -398,22 +367,13 @@ const CMSManagement = () => {
           </button>
           <button
             onClick={() => {
-              setThemeColors({
-                primary: '#007bff',
-                secondary: '#6c757d',
-                success: '#28a745',
-                danger: '#dc3545',
-                warning: '#ffc107',
-                info: '#17a2b8',
-                light: '#f8f9fa',
-                dark: '#343a40',
-                background: '#ffffff',
-                surface: '#f8f9fa',
-                text: '#212529',
-                textSecondary: '#6c757d',
-                border: '#dee2e6',
-                accent: '#17a2b8'
-              });
+              const defaultTheme = getDefaultTheme();
+              setThemeColors(defaultTheme);
+              saveAndApplyTheme(defaultTheme);
+              // Dispatch theme change event
+              window.dispatchEvent(new CustomEvent('themeChanged', {
+                detail: { themeColors: defaultTheme }
+              }));
               toast.info('Reset to default colors');
             }}
             style={{
