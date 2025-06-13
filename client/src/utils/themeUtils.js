@@ -6,14 +6,19 @@ export const loadAndApplyTheme = () => {
     if (savedTheme) {
       const themeColors = JSON.parse(savedTheme);
       applyThemeToDOM(themeColors);
-      console.log('Theme applied from localStorage:', themeColors);
+      console.log('✅ Custom theme loaded and applied');
       return themeColors;
     } else {
-      console.log('No saved theme found, using default');
+      // Apply default theme silently
+      const defaultTheme = getDefaultTheme();
+      applyThemeToDOM(defaultTheme);
       return null;
     }
   } catch (error) {
-    console.error('Failed to load saved theme:', error);
+    console.error('❌ Failed to load saved theme:', error);
+    // Fallback to default theme
+    const defaultTheme = getDefaultTheme();
+    applyThemeToDOM(defaultTheme);
     return null;
   }
 };
@@ -29,10 +34,10 @@ export const saveAndApplyTheme = (themeColors) => {
   try {
     applyThemeToDOM(themeColors);
     localStorage.setItem('customTheme', JSON.stringify(themeColors));
-    console.log('Theme saved and applied:', themeColors);
+    console.log('✅ Custom theme saved and applied successfully');
     return true;
   } catch (error) {
-    console.error('Failed to save theme:', error);
+    console.error('❌ Failed to save theme:', error);
     return false;
   }
 };

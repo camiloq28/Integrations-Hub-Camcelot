@@ -83,7 +83,6 @@ const CMSManagement = () => {
     const savedTheme = loadAndApplyTheme();
     if (savedTheme) {
       setThemeColors(savedTheme);
-      console.log('CMS: Loaded saved theme on mount');
     }
   }, []);
 
