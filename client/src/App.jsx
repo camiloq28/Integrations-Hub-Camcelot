@@ -8,9 +8,7 @@ import EnvironmentVariables from './pages/EnvironmentVariables';
 import UserManagement from './pages/UserManagement';
 import WorkflowBuilder from './pages/WorkflowBuilder';
 import GreenhouseSetup from './pages/integrations/GreenhouseSetup';
-import WorkflowManagement from './pages/WorkflowManagement';
 import GreenhouseDashboard from './pages/GreenhouseDashboard';
-import OrganizationUserManagement from './pages/OrganizationUserManagement';
 import GmailSetup from './pages/integrations/GmailSetup';
 import BambooHRSetup from './pages/integrations/BambooHRSetup';
 
@@ -43,6 +41,7 @@ function App() {
         <Route path="/client/workflows" element={<ClientLayout><WorkflowManagement /></ClientLayout>} />
         <Route path="/client/workflows/edit/:id" element={<ClientLayout><WorkflowBuilder /></ClientLayout>} />
         <Route path="/client/integrations/greenhouse" element={<ClientLayout><GreenhouseSetup /></ClientLayout>} />
+        <Route path="/client/integrations/greenhouse/dashboard" element={<GreenhouseDashboard />} />
         <Route path="/client/integrations/gmail" element={<ClientLayout><GmailSetup /></ClientLayout>} />
         <Route path="/client/integrations/bamboo-hr" element={<ClientLayout><BambooHRSetup /></ClientLayout>} />
 

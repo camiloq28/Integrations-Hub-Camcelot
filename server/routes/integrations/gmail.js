@@ -10,11 +10,22 @@ const router = express.Router();
 // Gmail OAuth configuration
 const getGmailOAuth2Client = () => {
   const redirectUri = `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`;
-  return new google.auth.OAuth2(
+  const oauth2Client = new google.auth.OAuth2(
     process.env.GMAIL_CLIENT_ID,
     process.env.GMAIL_CLIENT_SECRET,
     redirectUri
   );
+  
+  // Disable PKCE to avoid code_verifier issues
+  oauth2Client.generateAuthUrl = function(opts) {
+    return google.auth.OAuth2.prototype.generateAuthUrl.call(this, {
+      ...opts,
+      code_challenge_method: undefined,
+      code_challenge: undefined
+    });
+  };
+  
+  return oauth2Client;
 };
 
 // Generate OAuth URL
@@ -49,7 +60,8 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
-      state: state
+      state: state,
+      prompt: 'consent'
     });
 
     res.json({ authUrl });
