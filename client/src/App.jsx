@@ -28,8 +28,17 @@ function ClientLayout({ children }) {
 
 function App() {
   useEffect(() => {
-    // Load and apply saved theme on app start
-    loadAndApplyTheme();
+    // Load and apply saved theme on app start with retry mechanism
+    const loadThemeWithRetry = () => {
+      try {
+        loadAndApplyTheme();
+      } catch (error) {
+        console.warn('Theme loading failed, retrying in 100ms:', error);
+        setTimeout(loadThemeWithRetry, 100);
+      }
+    };
+    
+    loadThemeWithRetry();
     
     // Listen for theme changes from other components
     const handleThemeChange = (event) => {
@@ -42,10 +51,34 @@ function App() {
       }
     };
 
+    // Listen for theme applied events
+    const handleThemeApplied = (event) => {
+      console.log('Theme applied successfully across all contexts');
+    };
+
+    // Listen for storage changes (when themes are saved in other tabs/windows)
+    const handleStorageChange = (event) => {
+      if (event.key === 'customTheme' && event.newValue) {
+        try {
+          const themeColors = JSON.parse(event.newValue);
+          const root = document.documentElement;
+          Object.entries(themeColors).forEach(([key, value]) => {
+            root.style.setProperty(`--color-${key}`, value);
+          });
+        } catch (error) {
+          console.error('Failed to apply theme from storage change:', error);
+        }
+      }
+    };
+
     window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('themeApplied', handleThemeApplied);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('themeApplied', handleThemeApplied);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

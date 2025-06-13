@@ -7,17 +7,22 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5001,
     strictPort: true,
+    cors: true,
     hmr: {
-      clientPort: 443
+      clientPort: 443,
+      host: '4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev'
     },
     allowedHosts: [
-      '4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev'
+      '4510d6f5-60d4-4d1c-b423-94f825eeb9b3-00-3mho543xreghf.spock.replit.dev',
+      'localhost',
+      '127.0.0.1'
     ],
     proxy: {
       '/api': {
-        target: 'http://localhost:5000', // your backend runs on this port inside Replit
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        ws: true
       }
     }
   }

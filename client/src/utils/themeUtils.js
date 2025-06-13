@@ -1,4 +1,3 @@
-
 // Theme utility functions
 export const loadAndApplyTheme = () => {
   try {
@@ -25,9 +24,32 @@ export const loadAndApplyTheme = () => {
 
 export const applyThemeToDOM = (themeColors) => {
   const root = document.documentElement;
+
+  // Apply theme colors as CSS custom properties
   Object.entries(themeColors).forEach(([key, value]) => {
     root.style.setProperty(`--color-${key}`, value);
   });
+
+  // Also apply to body for immediate effect
+  if (themeColors.background) {
+    document.body.style.backgroundColor = themeColors.background;
+  }
+  if (themeColors.text) {
+    document.body.style.color = themeColors.text;
+  }
+
+  // Force style recalculation for all elements
+  const allElements = document.querySelectorAll('*');
+  allElements.forEach(element => {
+    if (element.style) {
+      element.style.display = element.style.display || '';
+    }
+  });
+
+  // Dispatch a custom event to notify all components
+  window.dispatchEvent(new CustomEvent('themeApplied', {
+    detail: { themeColors }
+  }));
 };
 
 export const saveAndApplyTheme = (themeColors) => {

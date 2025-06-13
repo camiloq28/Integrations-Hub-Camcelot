@@ -79,11 +79,39 @@ const CMSManagement = () => {
   useEffect(() => {
     fetchMenus();
     
-    // Load saved theme when component mounts
-    const savedTheme = loadAndApplyTheme();
-    if (savedTheme) {
-      setThemeColors(savedTheme);
-    }
+    // Load saved theme when component mounts with retry mechanism
+    const initializeTheme = () => {
+      try {
+        const savedTheme = loadAndApplyTheme();
+        if (savedTheme) {
+          setThemeColors(savedTheme);
+          console.log('CMS: Theme initialized successfully');
+        } else {
+          setThemeColors(getDefaultTheme());
+        }
+      } catch (error) {
+        console.error('CMS: Failed to initialize theme:', error);
+        setThemeColors(getDefaultTheme());
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    setTimeout(initializeTheme, 50);
+
+    // Listen for theme changes from other components
+    const handleGlobalThemeChange = (event) => {
+      if (event.detail && event.detail.themeColors) {
+        setThemeColors(event.detail.themeColors);
+      }
+    };
+
+    window.addEventListener('themeChanged', handleGlobalThemeChange);
+    window.addEventListener('themeApplied', handleGlobalThemeChange);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleGlobalThemeChange);
+      window.removeEventListener('themeApplied', handleGlobalThemeChange);
+    };
   }, []);
 
   const fetchMenus = async () => {
