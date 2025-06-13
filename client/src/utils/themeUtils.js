@@ -1,16 +1,29 @@
+
 // Theme utility functions
+let isThemeLoading = false;
+let loadedTheme = null;
+
 export const loadAndApplyTheme = () => {
+  // Prevent multiple simultaneous loads
+  if (isThemeLoading && loadedTheme) {
+    return loadedTheme;
+  }
+  
+  isThemeLoading = true;
+  
   try {
     const savedTheme = localStorage.getItem('customTheme');
     if (savedTheme) {
       const themeColors = JSON.parse(savedTheme);
       applyThemeToDOM(themeColors);
+      loadedTheme = themeColors;
       console.log('✅ Custom theme loaded and applied');
       return themeColors;
     } else {
       // Apply default theme
       const defaultTheme = getDefaultTheme();
       applyThemeToDOM(defaultTheme);
+      loadedTheme = defaultTheme;
       console.log('Using default theme');
       return defaultTheme;
     }
@@ -19,16 +32,21 @@ export const loadAndApplyTheme = () => {
     // Fallback to default theme
     const defaultTheme = getDefaultTheme();
     applyThemeToDOM(defaultTheme);
+    loadedTheme = defaultTheme;
     return defaultTheme;
+  } finally {
+    isThemeLoading = false;
   }
 };
 
 export const applyThemeToDOM = (themeColors) => {
-  const root = document.documentElement;
+  if (!document.documentElement) {
+    console.warn('DOM not ready, delaying theme application');
+    setTimeout(() => applyThemeToDOM(themeColors), 100);
+    return;
+  }
 
-  // Remove existing theme variables first
-  const existingVars = Array.from(root.style).filter(prop => prop.startsWith('--color-'));
-  existingVars.forEach(prop => root.style.removeProperty(prop));
+  const root = document.documentElement;
 
   // Apply theme colors as CSS custom properties
   Object.entries(themeColors).forEach(([key, value]) => {
@@ -56,9 +74,15 @@ export const applyThemeToDOM = (themeColors) => {
       transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
     }
     
-    body {
+    html, body {
       background-color: ${themeColors.background} !important;
       color: ${themeColors.text} !important;
+    }
+    
+    #root {
+      background-color: ${themeColors.background} !important;
+      color: ${themeColors.text} !important;
+      min-height: 100vh;
     }
     
     .btn-primary, button[style*="background: #28a745"], button[style*="background-color: #28a745"] {
@@ -82,23 +106,31 @@ export const applyThemeToDOM = (themeColors) => {
       background-color: ${themeColors.dark} !important;
       color: ${themeColors.light} !important;
     }
+
+    /* Force theme on all page containers */
+    div[style*="maxWidth"], div[style*="max-width"] {
+      color: ${themeColors.text} !important;
+    }
   `;
 
   dynamicStyle.textContent = cssRules;
 
-  // Force a reflow
-  document.body.offsetHeight;
+  // Force a reflow and ensure styles are applied
+  void document.body.offsetHeight;
 
   // Dispatch a custom event to notify all components
-  window.dispatchEvent(new CustomEvent('themeApplied', {
-    detail: { themeColors }
-  }));
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('themeApplied', {
+      detail: { themeColors }
+    }));
+  }, 0);
 };
 
 export const saveAndApplyTheme = (themeColors) => {
   try {
     applyThemeToDOM(themeColors);
     localStorage.setItem('customTheme', JSON.stringify(themeColors));
+    loadedTheme = themeColors;
     console.log('✅ Custom theme saved and applied successfully');
     return true;
   } catch (error) {

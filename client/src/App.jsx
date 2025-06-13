@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
@@ -28,37 +29,33 @@ function ClientLayout({ children }) {
 
 function App() {
   useEffect(() => {
-    // Load and apply saved theme immediately and with retry mechanism
-    const loadThemeWithRetry = () => {
+    // Single theme load on app initialization
+    const initializeTheme = () => {
       try {
         const result = loadAndApplyTheme();
-        console.log('Theme loaded successfully:', result ? 'custom' : 'default');
+        console.log('App theme initialized:', result ? 'loaded' : 'default');
       } catch (error) {
-        console.warn('Theme loading failed, retrying in 100ms:', error);
-        setTimeout(loadThemeWithRetry, 100);
+        console.warn('Theme initialization failed:', error);
       }
     };
     
-    // Load immediately
-    loadThemeWithRetry();
+    // Load theme immediately if DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeTheme);
+    } else {
+      initializeTheme();
+    }
     
-    // Also load after a short delay to ensure DOM is ready
-    setTimeout(loadThemeWithRetry, 50);
-    
-    // Listen for theme changes from other components
+    // Listen for theme changes from CMS management
     const handleThemeChange = (event) => {
       if (event.detail && event.detail.themeColors) {
-        console.log('Theme change detected, applying new theme');
+        console.log('Theme change detected from CMS');
+        // Don't reload, just apply the new theme
         const root = document.documentElement;
         Object.entries(event.detail.themeColors).forEach(([key, value]) => {
           root.style.setProperty(`--color-${key}`, value);
         });
       }
-    };
-
-    // Listen for theme applied events
-    const handleThemeApplied = (event) => {
-      console.log('Theme applied successfully across all contexts');
     };
 
     // Listen for storage changes (when themes are saved in other tabs/windows)
@@ -77,12 +74,11 @@ function App() {
     };
 
     window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('themeApplied', handleThemeApplied);
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
+      document.removeEventListener('DOMContentLoaded', initializeTheme);
       window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('themeApplied', handleThemeApplied);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
