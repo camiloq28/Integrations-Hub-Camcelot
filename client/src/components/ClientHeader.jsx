@@ -10,7 +10,8 @@ const ClientHeader = ({ orgName = 'Client Portal', user = {} }) => {
     navigate('/login');
   };
 
-  const { role, orgId } = user;
+  // Add null check before destructuring
+  const { role, orgId } = user || {};
 
   return (
     <header style={{ 
