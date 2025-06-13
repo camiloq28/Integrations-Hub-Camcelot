@@ -8,43 +8,86 @@ export const loadAndApplyTheme = () => {
       console.log('✅ Custom theme loaded and applied');
       return themeColors;
     } else {
-      // Apply default theme silently
+      // Apply default theme
       const defaultTheme = getDefaultTheme();
       applyThemeToDOM(defaultTheme);
-      return null;
+      console.log('Using default theme');
+      return defaultTheme;
     }
   } catch (error) {
     console.error('❌ Failed to load saved theme:', error);
     // Fallback to default theme
     const defaultTheme = getDefaultTheme();
     applyThemeToDOM(defaultTheme);
-    return null;
+    return defaultTheme;
   }
 };
 
 export const applyThemeToDOM = (themeColors) => {
   const root = document.documentElement;
 
+  // Remove existing theme variables first
+  const existingVars = Array.from(root.style).filter(prop => prop.startsWith('--color-'));
+  existingVars.forEach(prop => root.style.removeProperty(prop));
+
   // Apply theme colors as CSS custom properties
   Object.entries(themeColors).forEach(([key, value]) => {
     root.style.setProperty(`--color-${key}`, value);
   });
 
-  // Also apply to body for immediate effect
+  // Force immediate body styling
   if (themeColors.background) {
-    document.body.style.backgroundColor = themeColors.background;
+    document.body.style.setProperty('background-color', themeColors.background, 'important');
   }
   if (themeColors.text) {
-    document.body.style.color = themeColors.text;
+    document.body.style.setProperty('color', themeColors.text, 'important');
   }
 
-  // Force style recalculation for all elements
-  const allElements = document.querySelectorAll('*');
-  allElements.forEach(element => {
-    if (element.style) {
-      element.style.display = element.style.display || '';
+  // Create and inject dynamic CSS to ensure theme application
+  let dynamicStyle = document.getElementById('dynamic-theme-style');
+  if (!dynamicStyle) {
+    dynamicStyle = document.createElement('style');
+    dynamicStyle.id = 'dynamic-theme-style';
+    document.head.appendChild(dynamicStyle);
+  }
+
+  const cssRules = `
+    * {
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
     }
-  });
+    
+    body {
+      background-color: ${themeColors.background} !important;
+      color: ${themeColors.text} !important;
+    }
+    
+    .btn-primary, button[style*="background: #28a745"], button[style*="background-color: #28a745"] {
+      background-color: ${themeColors.primary} !important;
+      border-color: ${themeColors.primary} !important;
+    }
+    
+    .card, .surface, [style*="background: #1e1e1e"], [style*="background-color: #1e1e1e"] {
+      background-color: ${themeColors.surface} !important;
+      border-color: ${themeColors.border} !important;
+      color: ${themeColors.text} !important;
+    }
+    
+    input, textarea, select {
+      background-color: ${themeColors.surface} !important;
+      border-color: ${themeColors.border} !important;
+      color: ${themeColors.text} !important;
+    }
+    
+    header, [style*="background: #343a40"], [style*="background-color: #343a40"] {
+      background-color: ${themeColors.dark} !important;
+      color: ${themeColors.light} !important;
+    }
+  `;
+
+  dynamicStyle.textContent = cssRules;
+
+  // Force a reflow
+  document.body.offsetHeight;
 
   // Dispatch a custom event to notify all components
   window.dispatchEvent(new CustomEvent('themeApplied', {

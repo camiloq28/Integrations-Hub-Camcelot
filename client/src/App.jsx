@@ -28,17 +28,22 @@ function ClientLayout({ children }) {
 
 function App() {
   useEffect(() => {
-    // Load and apply saved theme on app start with retry mechanism
+    // Load and apply saved theme immediately and with retry mechanism
     const loadThemeWithRetry = () => {
       try {
-        loadAndApplyTheme();
+        const result = loadAndApplyTheme();
+        console.log('Theme loaded successfully:', result ? 'custom' : 'default');
       } catch (error) {
         console.warn('Theme loading failed, retrying in 100ms:', error);
         setTimeout(loadThemeWithRetry, 100);
       }
     };
     
+    // Load immediately
     loadThemeWithRetry();
+    
+    // Also load after a short delay to ensure DOM is ready
+    setTimeout(loadThemeWithRetry, 50);
     
     // Listen for theme changes from other components
     const handleThemeChange = (event) => {

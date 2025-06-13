@@ -113,9 +113,20 @@
 }
 
 /* Apply theme to common elements */
+html {
+  background-color: var(--color-background) !important;
+}
+
 body {
   background-color: var(--color-background) !important;
   color: var(--color-text) !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure all divs inherit theme colors */
+div {
+  color: inherit;
 }
 
 /* Button theme styles */
