@@ -12,6 +12,22 @@ const ClientPortal = () => {
   const formatIntegrationSlug = (name) =>
     name?.toLowerCase().replace(/\s+/g, '-');
 
+  const fetchIntegrationStatus = async (allowedIntegrations) => {
+    const axiosAuth = axiosWithAuth();
+    const statuses = {};
+    for (const integration of allowedIntegrations || []) {
+      const slug = formatIntegrationSlug(integration);
+      try {
+        await axiosAuth.get(`/api/integrations/${slug}/credentials`);
+        statuses[integration] = true;
+      } catch {
+        statuses[integration] = false;
+      }
+    }
+    console.log("🔧 Parsed integrations JSON:", statuses);
+    setIntegrationStatus(statuses);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const storedUserRaw = localStorage.getItem('user');
@@ -48,18 +64,7 @@ const ClientPortal = () => {
         console.log("📦 Parsed portal JSON:", orgJson);
         setOrgData(orgJson);
 
-        const statuses = {};
-        for (const integration of orgJson.allowedIntegrations || []) {
-          const slug = formatIntegrationSlug(integration);
-          try {
-            await axiosAuth.get(`/api/integrations/${slug}/credentials`);
-            statuses[integration] = true;
-          } catch {
-            statuses[integration] = false;
-          }
-        }
-        console.log("🔧 Parsed integrations JSON:", statuses);
-        setIntegrationStatus(statuses);
+        await fetchIntegrationStatus(orgJson.allowedIntegrations);
       } catch (err) {
         console.error('❌ Failed to load portal:', err);
       } finally {
@@ -68,7 +73,21 @@ const ClientPortal = () => {
     };
 
     fetchData();
-  }, []);
+
+    // Listen for integration status changes
+    const handleIntegrationChange = (event) => {
+      console.log('🔄 Integration status changed:', event.detail);
+      if (orgData?.allowedIntegrations) {
+        fetchIntegrationStatus(orgData.allowedIntegrations);
+      }
+    };
+
+    window.addEventListener('integrationStatusChanged', handleIntegrationChange);
+
+    return () => {
+      window.removeEventListener('integrationStatusChanged', handleIntegrationChange);
+    };
+  }, [orgData?.allowedIntegrations]);
 
   const logout = () => {
     localStorage.removeItem('user');

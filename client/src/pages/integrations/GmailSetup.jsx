@@ -103,10 +103,10 @@ const GmailSetup = () => {
       // Refresh the accounts list
       await fetchAccounts();
       
-      // Force a page refresh after a short delay to ensure integration status updates
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Trigger a custom event to notify parent components to refresh their data
+      window.dispatchEvent(new CustomEvent('integrationStatusChanged', { 
+        detail: { integration: 'Gmail', action: 'deleted', accountName } 
+      }));
     } catch (err) {
       toast.error('Error deleting account');
     }
