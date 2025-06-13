@@ -1,4 +1,3 @@
-
 const express = require('express');
 const { google } = require('googleapis');
 const IntegrationCredential = require('../../models/IntegrationCredential');
@@ -15,7 +14,7 @@ const getGmailOAuth2Client = () => {
     process.env.GMAIL_CLIENT_SECRET,
     redirectUri
   );
-  
+
   return oauth2Client;
 };
 
@@ -35,7 +34,7 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
     }
 
     const oauth2Client = getGmailOAuth2Client();
-    
+
     const scopes = [
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -66,7 +65,7 @@ router.get('/oauth/url', protect, hasRole('client_admin', 'client_editor'), (req
 router.get('/oauth/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
-    
+
     if (!code || !state) {
       return res.status(400).send('Missing authorization code or state');
     }
@@ -77,17 +76,41 @@ router.get('/oauth/callback', async (req, res) => {
       return res.status(400).send('Missing organization ID or account name');
     }
 
-    const oauth2Client = getGmailOAuth2Client();
-    
-    // Set the redirect URI for token exchange
-    oauth2Client.redirectUri = `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`;
-    
-    const { tokens } = await oauth2Client.getToken(code);
-    
-    // Get user info
-    oauth2Client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-    const userInfo = await oauth2.userinfo.get();
+    // Manual token exchange to avoid PKCE issues
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: process.env.GMAIL_CLIENT_ID,
+        client_secret: process.env.GMAIL_CLIENT_SECRET,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json();
+      console.error('❌ Token exchange failed:', errorData);
+      throw new Error(`Token exchange failed: ${errorData.error_description || errorData.error}`);
+    }
+
+    const tokens = await tokenResponse.json();
+
+    // Get user info with the access token
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`
+      }
+    });
+
+    if (!userInfoResponse.ok) {
+      throw new Error('Failed to fetch user info');
+    }
+
+    const userInfo = await userInfoResponse.json();
 
     // Check if this is the first account for this org/integration
     const existingAccounts = await IntegrationCredential.find({ orgId, integration: 'gmail' });
@@ -95,7 +118,7 @@ router.get('/oauth/callback', async (req, res) => {
 
     // Save credentials
     const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
-    
+
     await IntegrationCredential.findOneAndUpdate(
       { orgId, integration: 'gmail', accountName },
       {
@@ -105,8 +128,8 @@ router.get('/oauth/callback', async (req, res) => {
         expiresAt: expiryDate,
         isDefault: isFirstAccount, // First account becomes default
         metadata: {
-          email: userInfo.data.email,
-          name: userInfo.data.name,
+          email: userInfo.email,
+          name: userInfo.name,
           scope: tokens.scope
         }
       },
@@ -191,7 +214,7 @@ router.post('/test', protect, hasRole('client_admin', 'client_editor'), async (r
 router.delete('/credentials/:accountName', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
     const { accountName } = req.params;
-    
+
     const deleted = await IntegrationCredential.findOneAndDelete({
       orgId: req.user.orgId,
       integration: 'gmail',
@@ -208,7 +231,7 @@ router.delete('/credentials/:accountName', protect, hasRole('client_admin', 'cli
         orgId: req.user.orgId,
         integration: 'gmail'
       });
-      
+
       if (remaining) {
         remaining.isDefault = true;
         await remaining.save();
@@ -226,7 +249,7 @@ router.delete('/credentials/:accountName', protect, hasRole('client_admin', 'cli
 router.post('/credentials/:accountName/set-default', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
     const { accountName } = req.params;
-    
+
     // Remove default from all accounts
     await IntegrationCredential.updateMany(
       { orgId: req.user.orgId, integration: 'gmail' },
@@ -255,7 +278,7 @@ router.post('/credentials/:accountName/set-default', protect, hasRole('client_ad
 router.post('/test/:accountName', protect, hasRole('client_admin', 'client_editor'), async (req, res) => {
   try {
     const { accountName } = req.params;
-    
+
     const creds = await IntegrationCredential.findOne({
       orgId: req.user.orgId,
       integration: 'gmail',
