@@ -188,6 +188,7 @@ const GreenhouseDashboard = () => {
           </tbody>
         </table>
       </div>
+      </div>
     </div>
   );
 };
