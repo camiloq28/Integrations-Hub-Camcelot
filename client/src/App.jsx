@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import UserProfile from './pages/UserProfile';
 import UserManagement from './pages/UserManagement';
-import OrganizationUserManagement from './pages/OrganizationUserManagement';
+import OrganizationUserManagement from './pages/OrganizationUserManagement.jsx';
 import WorkflowBuilder from './pages/WorkflowBuilder';
 import PlanManagement from './pages/PlanManagement';
 import EnvironmentVariables from './pages/EnvironmentVariables';
