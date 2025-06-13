@@ -16,15 +16,6 @@ const getGmailOAuth2Client = () => {
     redirectUri
   );
   
-  // Disable PKCE to avoid code_verifier issues
-  oauth2Client.generateAuthUrl = function(opts) {
-    return google.auth.OAuth2.prototype.generateAuthUrl.call(this, {
-      ...opts,
-      code_challenge_method: undefined,
-      code_challenge: undefined
-    });
-  };
-  
   return oauth2Client;
 };
 
@@ -87,6 +78,10 @@ router.get('/oauth/callback', async (req, res) => {
     }
 
     const oauth2Client = getGmailOAuth2Client();
+    
+    // Set the redirect URI for token exchange
+    oauth2Client.redirectUri = `${process.env.BASE_URL}/api/integrations/gmail/oauth/callback`;
+    
     const { tokens } = await oauth2Client.getToken(code);
     
     // Get user info
